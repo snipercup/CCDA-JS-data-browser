@@ -18,18 +18,19 @@ When installing the packages using NPM install, an error shows up stating python
 
 ## cdda-bousai-guide
 https://github.com/qrg/cdda-bousai-guide.git
-
+Cannot get it to work. I get this error when I try 'node index.js' from the windows command prompt:
+SyntaxError: Cannot use import statement outside a module
 
 ## CDDA-Browser
+A browser created in godot. Got it figured out pretty quick and it's fairly portable. Could be considered an alternative should Javascript not work out. The creator is nice and reponded quickly. Still waiting for a reaction.
 https://github.com/RabbitB/CDDA-Browser.git
 
 
 ## CDDA-Json-Editor
 https://github.com/TRScheel/CDDA-Json-Editor.git
+Could start the server and run index.html on localhost, but that's about it. It's missing the /dist folder and I'm not sure how to compile.
 
 
 ## cdda-item-search
 https://github.com/zunsthy/cdda-item-search.git
-
-
-##
+Could get it to work but it was a bit of a hassle. Maybe if there was more documentation it would be easyer. Left an issue on the git repository. No response yet.
