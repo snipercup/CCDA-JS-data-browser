@@ -34,3 +34,9 @@ Could start the server and run index.html on localhost, but that's about it. It'
 ## cdda-item-search
 https://github.com/zunsthy/cdda-item-search.git
 Could get it to work but it was a bit of a hassle. Maybe if there was more documentation it would be easyer. Left an issue on the git repository. No response yet.
+
+
+## cataclysm_dda_item_finder
+https://www.reddit.com/r/cataclysmdda/comments/9uo1up/cataclysm_dda_item_finder/ 
+This has no GITHUB repo unfortunately. This item browser is really close to what is desired but the source is nowhere to be found. Messaged the OP of that thread but no reply.
+
