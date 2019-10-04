@@ -1,5 +1,7 @@
 # CCDA-JS-data-browser
- A browser-based tool to explore and analyse JSON data for cataclysm: Dark days ahead. The idea (which I took from CDDA-JS-itembrowser (see below) ) is that you drop the browser folder into your CDDA game directory and open the index.html from that folder and let the javascript do the rest. The javascript should be able to go up to the game directory of cdda and then down to data/json.
+ A browser-based tool to explore and analyse JSON data for cataclysm: Dark days ahead. The idea (which I took from CDDA-JS-itembrowser (see below) ) is that you drop the browser folder into your CDDA game directory and open the index.html from that folder and let the javascript do the rest. The javascript is not able to go up to the game directory of cdda and then down to data/json. Getting the json from javascript directly is not the way to go.
+
+The cdda-js-itembrowser uses a batch script and lua to get the json files from the cataclysm game folder. The lua script changes the json into 
 
 
 
@@ -9,7 +11,7 @@
 https://github.com/chuanyueyouxia/cdda-js-itembrowser-test.git
 This is an outdated verstion of:
 https://github.com/lispcoc/cdda-js-itembrowser.git
-This is the most favorable example of an item browsers since it is in HTML/Javascript with little to no dependencies. The newer version does use some LUA, that is not desirable.
+This is the most favorable example of an item browsers since it is in HTML/Javascript with little to no dependencies. The newer version does use some LUA. After investigating it turns out there are lua binaries for most platforms and the can be distributed with the application.
 
 ## cdda-edit
 https://github.com/nornagon/cdda-edit.git
