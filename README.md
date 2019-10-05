@@ -10,16 +10,25 @@ The code in this repository can be modified and added to in order to answer abov
 
 ## Installation 
 
-### (windows)
+### windows
 - Go to the top-right of this page and click 'clone or download' to download the source code
 - Put the browser folder in your cataclysm dda game folder
 - Go into the browser folder and run the exec.bat file
 - This wil start a lua script that copies the json data in a useful format. You will be asked if you want to translate. Answering y will translate the json to chinese.
 - After the script finishes, open eighter the item browser or the itemgroup analyser.
+
+### Linux
+ - Download a lua binary from the lua website
+ - Write a script that does the same as the windows batch file
+ - Run the script
+- This wil start a lua script that copies the json data in a useful format. You will be asked if you want to translate. Answering y will translate the json to chinese.
+- After the script finishes, open eighter the item browser or the itemgroup analyser.
+ 
+
+
+
  
 The idea (which I took from CDDA-JS-itembrowser (see below) ) is that you drop the browser folder into your CDDA game directory and open the index.html from that folder and let the javascript do the rest. The javascript is not able to go up to the game directory of cdda and then down to data/json. Getting the json from javascript directly is not the way to go.
-
-
 
 # Options considered:
 
