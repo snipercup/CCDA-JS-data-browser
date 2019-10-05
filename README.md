@@ -1,7 +1,23 @@
 # CCDA-JS-data-browser
- A browser-based tool to explore and analyse JSON data for cataclysm: Dark days ahead. The idea (which I took from CDDA-JS-itembrowser (see below) ) is that you drop the browser folder into your CDDA game directory and open the index.html from that folder and let the javascript do the rest. The javascript is not able to go up to the game directory of cdda and then down to data/json. Getting the json from javascript directly is not the way to go.
+ A browser-based tool to explore and analyse JSON data for cataclysm: Dark days ahead. This project started with the question: what items spawn where and how much, and what items do not spawn at all? In the same way you can ask many questions that can be answered by analysing the json:
+- What items do not have recipes
+- What locations do not have monsters/item spawns
+- What items or furniture do not have a sprite associated with it
+- What items show up in a trader and what items do not
+- What monsters spawn where and how much, what monster is rare
 
-The cdda-js-itembrowser uses a batch script and lua to get the json files from the cataclysm game folder. The lua script changes the json into 
+The code in this repository can be modified and added to in order to answer above questions.
+
+## Installation 
+
+### (windows)
+- Go to the top-right of this page and click 'clone or download' to download the source code
+- Put the browser folder in your cataclysm dda game folder
+- Go into the browser folder and run the exec.bat file
+- This wil start a lua script that copies the json data in a useful format. You will be asked if you want to translate. Answering y will translate the json to chinese.
+- After the script finishes, open eighter the item browser or the itemgroup analyser.
+ 
+The idea (which I took from CDDA-JS-itembrowser (see below) ) is that you drop the browser folder into your CDDA game directory and open the index.html from that folder and let the javascript do the rest. The javascript is not able to go up to the game directory of cdda and then down to data/json. Getting the json from javascript directly is not the way to go.
 
 
 
