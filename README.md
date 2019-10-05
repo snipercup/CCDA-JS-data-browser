@@ -1,5 +1,7 @@
 # CCDA-JS-data-browser
- A browser-based tool to explore and analyse JSON data for cataclysm: Dark days ahead. This project started with the question: what items spawn where and how much, and what items do not spawn at all? In the same way you can ask many questions that can be answered by analysing the json:
+ A browser-based tool to explore and analyse JSON data for cataclysm: Dark days ahead. Currently it can be used to find out in how many itemgroups an item is, what itemgroups they are and what the spawn chance is. Once you followed the install instructions, you can open the itemgroups analyser, select a category and press ok. You will get a list if items and the number of itemgroups next to it. If you click an item you will get to see what itemgroups it belongs to and what the spawn chance is. Note that the spawn chance is currently just what is written in the json but it is actually relative to other items in the itemgroup so it's probably lower then what is shown.
+ 
+This project started with the question: what items spawn where and how much, and what items do not spawn at all? In the same way you can ask many questions that can be answered by analysing the json:
 - What items do not have recipes
 - What locations do not have monsters/item spawns
 - What items or furniture do not have a sprite associated with it
