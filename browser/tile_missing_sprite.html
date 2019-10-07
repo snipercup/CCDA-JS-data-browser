@@ -120,16 +120,11 @@ footer {
 		for (var item of items) {
 			if (item.name && item.id) {
 				if (item.type == get_itemType_value() || get_itemType_value() == "Any") {
-				
-					//console.log("item.id = " + item.id);
-					//if (item.id == "corpse") {
-						//console.log("item.id = " + item.id);
-						if (itemDoesntHaveSprite(item.id)) {
-							htmlString += "<tr>";
-							htmlString += "<td>" + '<a id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
-							htmlString += "</tr>";
-						}
-					//}
+					if (itemDoesntHaveSprite(item.id)) {
+						htmlString += "<tr>";
+						htmlString += "<td>" + '<a id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
+						htmlString += "</tr>";
+					}
 				}
 			}
 		}
@@ -145,39 +140,17 @@ footer {
 		for (var gf of gfx) {
 			if (typeof gf[0].tiles !== 'undefined') {
 				for (var til of gf[0].tiles) {
-					//console.log("til.id = " + til.id);
-					if(itemID == "corpse" && til.id == "corpse"){
-							console.log("til.id = " + til.id + ", til.id.length = " + til.id.length + ", itemID = " + itemID);
-							console.log("til.id.indexOf(itemID) = " + til.id.indexOf(itemID));
-					}
-					//if(til.id.indexOf(itemID) > -1){
-						if(itemID == "corpse" && til.id == "corpse"){
-							console.log("til.id.indexOf(itemID) > -1");
-						}
+					if(til.id.indexOf(itemID) > -1){
 						if (Array.isArray(til.id)) {
-						
-							if(itemID == "corpse" && til.id == "corpse"){
-								console.log("Array.isArray(til.id)");
-							}
 							for (var tileid of til.id) {
 								if(tileid == itemID){
 									return false;	//Found a sprite for the item, so return false
 								}
 							}
 						} else {
-							if(itemID == "corpse" && til.id == "corpse"){
-								console.log("else");
-							}
 							if(til.id == itemID){
-							
-							if(itemID == "corpse" && til.id == "corpse"){
-								console.log("til.id == itemID");
-							}
-							//console.log("til.id = " + til.id + ", til.id.length = " + til.id.length + ", itemID = " + itemID);
-							return false;	//Found a sprite for the item, so return false
-							}
 						}
-					//}
+					}
 				}
 			}
 		}
