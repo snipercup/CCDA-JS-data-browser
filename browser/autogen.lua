@@ -169,6 +169,7 @@ local mod_tool_qualitys = {}
 local ammunition_types = {}
 local mod_ammunition_types = {}
 local itemgroups = {}
+local gfx = {}
 local data_array = {}
 local list = io.open("rsc/list.txt")
 local filepath = list:read()
@@ -211,6 +212,31 @@ while filepath do
 			elseif is_tool_quality_type(type_val) then table.insert(tool_qualitys, val) 
 			elseif is_itemgroups_type(type_val) then table.insert(itemgroups, val) 
 			elseif is_ammunition_type(type_val) then table.insert(ammunition_types, val) end
+		end
+      end
+    end
+  end
+  io.close(jsonfile)
+  filepath = list:read()
+end
+io.close(list)
+
+
+list = io.open("rsc/list_gfx.txt")
+filepath = list:read()
+
+
+while filepath do
+  local jsonfile = io.open(filepath)
+  if jsonfile then
+    print("Processing : " .. filepath)
+    local data = json.decode(jsonfile:read("*a"))
+    for key, val in pairs(data) do
+      if type(val) == "table" then
+		if answer=="y" then
+			table.insert(gfx, translate_table(lang_data, val))
+	    else
+			table.insert(gfx, val)
 		end
       end
     end
@@ -378,6 +404,13 @@ io.write(";\n")
 
 io.write("var itemgroups = ")
 io.write(json.encode(itemgroups))
+io.write(";\n")
+
+
+io.output("rsc/gfx.js")
+
+io.write("var gfx = ")
+io.write(json.encode(gfx))
 io.write(";\n")
 
 --[[
