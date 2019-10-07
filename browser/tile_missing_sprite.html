@@ -78,11 +78,12 @@ footer {
   <script type="text/javascript" src="js/jquery.tablesorter.min.js"></script>
   <script type="text/javascript" src="js/jquery.tinysort.min.js"></script>
   <script type="text/javascript" src="rsc/data.js"></script>
+  <script type="text/javascript" src="rsc/gfx.js"></script>
   <script type="text/javascript" src="js/cdda.js"></script>
   <script type="text/javascript" src="js/JsonFlagClass.js"></script>
   <script type="text/javascript" src="js/MaterialClass.js"></script>
   <script type="text/javascript" src="js/ItemClass.js"></script>
-  <script type="text/javascript" src="js/ItemGroupClass.js"></script>
+  <script type="text/javascript" src="js/gfxClass.js"></script>
   <script type="text/javascript" src="js/RequirementClass.js"></script>
   <script type="text/javascript" src="js/RecipeClass.js"></script>
   <script type="text/javascript" src="js/TechniqueClass.js"></script>
@@ -100,22 +101,6 @@ footer {
 		fillItemTypeList()
 	});
 	
-	//Gets the item groups the item is in
-	function getItemItemgroups(itemID) {
-		var itemEntry;
-		var itemGroupList = [];
-		var itemEntryList;
-		for (var itemgroup of itemgroups) {
-			if (itemgroup.id) {
-				itemEntry = getItemEntryFromItemGroup(itemID, itemgroup)
-			    if (itemEntry) {
-					itemEntryList = [itemgroup.id, itemEntry[1]]
-					itemGroupList.push(itemEntryList); 
-				}
-			}
-		}
-		return itemGroupList;
-	}
 	
 	//Updates the list of items on the left
 	function fillItemTypeList(){
@@ -127,54 +112,89 @@ footer {
 		}
 	} 
 	
-	//Updates the list of items on the left
-	function updateItemList(){
-		document.getElementById("itemList").innerHTML = "";
+	//Creates the results table from an item and itemgroups
+	function createResultsTable(type) {
 		var htmlString;
 		htmlString = "<table>";
-		htmlString += "<tr><td>Itemgroup name</td><td>Itemgroups</td></tr>";
+		htmlString += "<tr><td>Item name</td></tr>";
 		for (var item of items) {
 			if (item.name && item.id) {
 				if (item.type == get_itemType_value() || get_itemType_value() == "Any") {
-					htmlString += "<tr>";
-					htmlString += "<td>" + '<a id="'+item.id+'" href="#" onClick="select_item(this)">' + item.name + '</span></td>';
-					htmlString += "<td>" + getItemItemgroups(item.id).length + '</td>';
-					htmlString += "</tr>";
+				
+					//console.log("item.id = " + item.id);
+					//if (item.id == "corpse") {
+						//console.log("item.id = " + item.id);
+						if (itemDoesntHaveSprite(item.id)) {
+							htmlString += "<tr>";
+							htmlString += "<td>" + '<a id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
+							htmlString += "</tr>";
+						}
+					//}
 				}
 			}
 		}
 		htmlString += "</table>";
-		$('#itemList').append(htmlString);
-	} 
-	
-	//When an item from the list is clicked
-	function select_item(itemhref) {
-		var itemID = itemhref.id
-		var itemGroupList;
-		itemGroupList = getItemItemgroups(itemID)
-		createResultsTable(itemGroupList);
-	}
-	
-	//Creates the results table from an item and itemgroups
-	function createResultsTable(itemGroupList) {
-		var htmlString;
-		if (itemGroupList.length > 0){
-			htmlString = "<table>";
-			htmlString += "<tr><td>Itemgroup name</td><td>chance</td></tr>";
-			var itemEntry;
-			for (var itemgroup of itemGroupList) {
-				htmlString += "<tr>";
-				htmlString += "<td>" + itemgroup[0] + "</td>";
-				htmlString += "<td>" + itemgroup[1] + "</td>";
-				htmlString += "</tr>";
-			}
-			htmlString += "</table>";
-		} else {
-			htmlString = "<div>No results</div>";
-		}
 		updateResultsTable(htmlString);
 	}
 	
+	
+	//Checks to see if the item has a sprite
+	function itemDoesntHaveSprite(itemID) {
+		var array
+		var tilid
+		for (var gf of gfx) {
+			if (typeof gf[0].tiles !== 'undefined') {
+				for (var til of gf[0].tiles) {
+					//console.log("til.id = " + til.id);
+					if(itemID == "corpse" && til.id == "corpse"){
+							console.log("til.id = " + til.id + ", til.id.length = " + til.id.length + ", itemID = " + itemID);
+							console.log("til.id.indexOf(itemID) = " + til.id.indexOf(itemID));
+					}
+					//if(til.id.indexOf(itemID) > -1){
+						if(itemID == "corpse" && til.id == "corpse"){
+							console.log("til.id.indexOf(itemID) > -1");
+						}
+						if (Array.isArray(til.id)) {
+						
+							if(itemID == "corpse" && til.id == "corpse"){
+								console.log("Array.isArray(til.id)");
+							}
+							for (var tileid of til.id) {
+								if(tileid == itemID){
+									return false;	//Found a sprite for the item, so return false
+								}
+							}
+						} else {
+							if(itemID == "corpse" && til.id == "corpse"){
+								console.log("else");
+							}
+							if(til.id == itemID){
+							
+							if(itemID == "corpse" && til.id == "corpse"){
+								console.log("til.id == itemID");
+							}
+							//console.log("til.id = " + til.id + ", til.id.length = " + til.id.length + ", itemID = " + itemID);
+							return false;	//Found a sprite for the item, so return false
+							}
+						}
+					//}
+				}
+			}
+		}
+		return true; //No sprite for the item, return true
+	}
+	
+	//Checks to see if the item has a sprite
+	function itemdDoesntHaveSprite() {
+		for (var gf of gfx) {
+			if (typeof gf[0].tiles !== 'undefined') {
+				for (var til of gf[0].tiles) {
+					console.log("til.id = " + til.id);
+				}
+			}
+		}
+		return true; //No sprite for the item, return true
+	}
 	
 		
 	//Adds an item type if it does not already exists in the item type selection box list
@@ -198,25 +218,14 @@ footer {
 	
 	//When the OK button is clicked
 	function btn_OK_Click(){
-		updateItemList()
+		createResultsTable()
+		//itemdDoesntHaveSprite()
 	} 
 	
 	//Gets the value of the item type select element
 	function get_itemType_value(){
 		return document.getElementById("itemType").value;
 	} 
-	
-	//Returns that item list entry from the item group.
-	function getItemEntryFromItemGroup(itemID, itemgroup) {
-		if (itemgroup.items && itemgroup.type == "item_group"){
-			for (var itemInGroup of itemgroup.items) {
-				if (itemInGroup[0] == itemID) {
-					return itemInGroup;
-				}
-			}
-		}
-		return false;
-	}
 	
 	//Updates the results table
 	function updateResultsTable(htmlString) {
@@ -230,7 +239,7 @@ footer {
 
 <div class="box">
   <header>
-  <h2>Itemgroups analyser</h2>
+  <h2>Tiles missing sprites</h2>
 </header>
   <div class="row content">
   	<table border="1" width="100%" height="100%">
