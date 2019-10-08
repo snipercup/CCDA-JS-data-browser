@@ -1,0 +1,474 @@
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <style>
+html,
+body {
+  height: 100%;
+  margin: 0
+}
+
+.box {
+  display: flex;
+  flex-flow: column;
+  height: 100%;
+}
+
+.box .row {
+  border: 1px dotted grey;
+}
+
+.box .row.header {
+  flex: 0 1 auto;
+  /* The above is shorthand for:
+  flex-grow: 0,
+  flex-shrink: 1,
+  flex-basis: auto
+  */
+}
+
+.box .row.content {
+  flex: 1 1 auto;
+}
+
+.box .row.footer {
+  flex: 0 1 40px;
+}
+
+
+/* Style the header */
+header {
+  background-color: #666;
+  padding: 2px;
+  text-align: center;
+  font-size: 20px;
+  color: white;
+}
+
+/* Create two columns/boxes that floats next to each other */
+nav {
+  background: #ccc;
+  padding: 20px;
+}
+
+/* Style the list inside the menu */
+nav ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+article {
+  padding: 20px;
+  background-color: #f1f1f1;
+}
+
+
+/* Style the footer */
+footer {
+  background-color: #777;
+  padding: 10px;
+  text-align: center;
+  color: white;
+}
+
+  </style>
+  <script src="js/jquery-3.0.0.min.js"></script>
+  <script type="text/javascript" src="setting.js"></script>
+  <script type="text/javascript" src="js/jquery.tablesorter.min.js"></script>
+  <script type="text/javascript" src="js/jquery.tinysort.min.js"></script>
+  <script type="text/javascript" src="rsc/data.js"></script>
+  <script type="text/javascript" src="js/cdda.js"></script>
+  <script type="text/javascript" src="js/JsonFlagClass.js"></script>
+  <script type="text/javascript" src="js/MaterialClass.js"></script>
+  <script type="text/javascript" src="js/ItemClass.js"></script>
+  <script type="text/javascript" src="js/ItemGroupClass.js"></script>
+  <script type="text/javascript" src="js/RequirementClass.js"></script>
+  <script type="text/javascript" src="js/RecipeClass.js"></script>
+  <script type="text/javascript" src="js/TechniqueClass.js"></script>
+  <script type="text/javascript" src="js/SkillClass.js"></script>
+  <script type="text/javascript" src="js/ToolqualityClass.js"></script>
+  <script type="text/javascript" src="js/AmmunitiontypeClass.js"></script>    
+  <script type="text/javascript" src="js/Transrate.js"></script>
+  <script type="text/javascript" src="js/json-syntaxHighlight.js"></script>  
+  <script type="text/javascript" src="js/lang/en.js"></script>
+  <script type="text/javascript" src="js/lang/zh_CN.js"></script>  
+  <script type="text/javascript">
+  
+	//When the page is done loading
+	$(document).ready(function () {
+		fillItemTypeList()
+	}); 
+	
+	//Returns that item list entry from the item group.
+	function getItemEntryFromItemGroup(itemID, itemgroup) {
+		if (itemgroup.items && itemgroup.type == "item_group"){
+			for (var itemInGroup of itemgroup.items) {
+				if (itemInGroup[0] == itemID) {
+					return itemInGroup;
+				}
+				if (itemInGroup.item == itemID) {
+					return itemInGroup;
+				}
+			}
+		}
+		if (itemgroup.entries && itemgroup.type == "item_group"){
+			for (var entryInGroup of itemgroup.entries) {
+				if (entryInGroup.item == itemID) {
+					if (itemID == "buttermilk") {
+						console.log("entryInGroup.item = " + entryInGroup.item + ", itemID - " + itemID);
+					}
+					return entryInGroup;
+				}
+			}
+		}
+		return false;
+	}
+	
+	//Gets the item groups the item is in
+	function getItemItemgroups(itemID) {
+		var itemEntry;
+		var itemGroupList = [];
+		var itemEntryList;
+		for (var itemgroup of itemgroups) {
+			if (itemgroup.id) {
+				itemEntry = getItemEntryFromItemGroup(itemID, itemgroup)
+			  if (itemEntry) {
+				  if (itemEntry.item) {
+						itemEntryList = [itemgroup.id, itemEntry.item]
+						itemGroupList.push(itemEntryList); 
+					} else {
+						itemEntryList = [itemgroup.id, itemEntry[1]]
+						itemGroupList.push(itemEntryList); 
+					}
+				}
+			}
+		}
+		return itemGroupList;
+	}
+	
+	//Updates the list of items on the left
+	function updateItemList(){
+		document.getElementById("itemList").innerHTML = "";
+		var numItemGroups;
+		var numItemInRecipes;
+		var numItemFromRecipes;
+		var total;
+		var htmlString;
+		
+		htmlString = "<p>click the column heads to sort</p>";
+		htmlString += "<table>";
+		htmlString += "<tr>"
+		htmlString += "<th>Item name</th>"
+		htmlString += "<th class='vertical'><div class='vertical'>Item<BR>groups</div></th>"
+		htmlString += "<th class='vertical'><div class='vertical'>Used in recipes</div></th>"
+		htmlString += "<th class='vertical'><div class='vertical'>From recipes</div></th>"
+		htmlString += "<th class='vertical'><div class='vertical'>Total</div></th>"
+		htmlString += "</tr>";
+		
+		for (var item of items) {
+			if (item.name && item.id) {
+				if (item.type == get_itemType_value() || get_itemType_value() == "Any") {
+					numItemGroups = getItemItemgroups(item.id).length
+					numItemInRecipes = getItemInRecipes(item.id).length
+					numItemFromRecipes = getItemFromRecipes(item.id).length
+					total = numItemGroups + numItemInRecipes + numItemFromRecipes
+					
+					htmlString += "<tr>";
+					if (total == 0){
+						htmlString += "<td>" + '<a style="color:red;" id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
+					} else {
+						htmlString += "<td>" + '<a id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
+					}
+					htmlString += "<td style='text-align: center;'>" + numItemGroups + '</td>';
+					htmlString += "<td style='text-align: center;'>" + numItemInRecipes + '</td>';
+					htmlString += "<td style='text-align: center;'>" + numItemFromRecipes + '</td>';
+					htmlString += "<td style='text-align: center;'>" + total + '</td>';
+					htmlString += "</tr>";
+				}
+			}
+		}
+		htmlString += "</table>";
+		$('#itemList').append(htmlString);
+		tableSort();
+	} 
+	
+	//Gets the recipes the item is in
+	function getItemFromRecipes(itemID) {
+		var recipeList = [];
+		for (var recipe of recipes) {
+			if (recipe.result) {
+			  if (recipe.result == itemID) {
+					recipeList.push(recipe.result); 
+				}
+			}
+		}
+		return recipeList;
+	}
+	
+	//When an item from the list is clicked
+	function select_item(itemhref) {
+		var itemID = itemhref.id
+		var itemGroupList;
+		var itemRecipeList;
+		updateItemDescriptionHTML(itemID);
+		itemGroupList = getItemItemgroups(itemID);
+		itemInRecipeList = getItemInRecipes(itemID);
+		itemFromRecipeList = getItemFromRecipes(itemID);
+		createItemgroupResultsTable(itemGroupList);
+		createInRecipeResultsTable(itemInRecipeList);
+		createFromRecipeResultsTable(itemFromRecipeList);
+	}
+	
+	//Creates the results table from an item and recipes
+	function createFromRecipeResultsTable(itemRecipeList) {
+		var htmlString;
+		if (itemRecipeList.length > 0){
+			htmlString = "<table border='1'>";
+			htmlString += "<tr><td>Created from recipe</td></tr>";
+			for (var recipe of itemRecipeList) {
+				htmlString += "<tr>";
+				htmlString += "<td>" + recipe + "</td>";
+				htmlString += "</tr>";
+			}
+			htmlString += "</table>";
+		} else {
+			htmlString = "<div>No from recipe results</div>";
+		}
+		updateFromRecipeResultsTable(htmlString);
+	}
+	
+	//Creates the results table from an item and recipes
+	function createInRecipeResultsTable(itemRecipeList) {
+		var htmlString;
+		if (itemRecipeList.length > 0){
+			htmlString = "<table border='1'>";
+			htmlString += "<tr><td>Used in recipe</td></tr>";
+			for (var recipe of itemRecipeList) {
+				htmlString += "<tr>";
+				htmlString += "<td>" + recipe + "</td>";
+				htmlString += "</tr>";
+			}
+			htmlString += "</table>";
+		} else {
+			htmlString = "<div>No used in recipe results</div>";
+		}
+		updateInRecipeResultsTable(htmlString);
+	}
+	
+	//Updates the results table
+	function updateItemgroupResultsTable(htmlString) {
+		document.getElementById("itemGroupResults").innerHTML = htmlString;
+	}
+	
+	//Updates the results table
+	function updateInRecipeResultsTable(htmlString) {
+		document.getElementById("inRecipeResults").innerHTML = htmlString;
+	}
+	
+	//Updates the results table
+	function updateFromRecipeResultsTable(htmlString) {
+		document.getElementById("fromRecipeResults").innerHTML = htmlString;
+	}
+	
+	
+	
+	//Creates the results table from an item and itemgroups
+	function createItemgroupResultsTable(itemGroupList) {
+		var htmlString;
+		if (itemGroupList.length > 0){
+			htmlString = "<table border='1'>";
+			htmlString += "<tr><td>Itemgroup name</td><td>chance</td></tr>";
+			var itemEntry;
+			for (var itemgroup of itemGroupList) {
+				htmlString += "<tr>";
+				htmlString += "<td>" + itemgroup[0] + "</td>";
+				htmlString += "<td>" + itemgroup[1] + "</td>";
+				htmlString += "</tr>";
+			}
+			htmlString += "</table>";
+		} else {
+			htmlString = "<div>No itemgroup results</div>";
+		}
+		updateItemgroupResultsTable(htmlString);
+	}
+	
+	//Returns if the item is a component in the recipe.
+	function isItemInRecipe(itemID, recipe) {
+		var level1
+		var level2
+		var level3
+		if (recipe.components && recipe.type == "recipe"){
+			for (var level1 of recipe.components) {
+				if (Array.isArray(level1)) {
+					for (var level2 of level1) {
+						//if (Array.isArray(level2)) {
+							//for (var level3 of level2) {
+							//	if (level3[0] == itemID) {
+							//		return true;
+							//	}
+							//}
+						//}	else {
+							if (level2[0] == itemID) {
+								return true;
+							}
+						//}
+					}
+				}	else {
+					if (level1[0] == itemID) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	
+	//Gets the recipes the item is in
+	function getItemInRecipes(itemID) {
+		var inRecipe;
+		var recipeList = [];
+		for (var recipe of recipes) {
+			if (recipe.result) {
+				inRecipe = isItemInRecipe(itemID, recipe)
+			  if (inRecipe) {
+					recipeList.push(recipe.result); 
+				}
+			}
+		}
+		return recipeList;
+	}
+	
+	
+	
+	//Updates the results table
+	function updateItemDescriptionHTML(itemID) {
+		var item = getItemFromItemList(itemID);
+		htmlString = "<p>viewing results for:</p>";
+		htmlString += "<table border='1'>";
+		htmlString += "<tr><td>Item ID</td><td>"+item.id+"</td></tr>";
+		htmlString += "<tr><td>Item name</td><td>"+item.name+"</td></tr>";
+		htmlString += "<tr><td>Item description</td><td>"+item.description+"</td></tr>";
+		htmlString += "</table><BR><BR>";
+		document.getElementById("itemDescription").innerHTML = htmlString;
+	}
+	
+	//Gets item json object from the item list
+	function getItemFromItemList(itemID){
+		for (var item of items) {
+			if (itemID == item.id) {
+				return item;
+			}
+		}
+		return false;
+	} 
+	
+	//Updates the list of items on the left
+	function fillItemTypeList(){
+		document.getElementById("itemList").innerHTML = "";
+		for (var item of items) {
+			if (item.name && item.id) {
+				addItemTypeToList(item.type); //Adds an item type to the item type selection box list
+			}
+		}
+	}
+	
+	//Enables table sort
+	function tableSort(){
+		const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
+		const comparer = (idx, asc) => (a, b) => ((v1, v2) => 
+		v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)
+		)(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+
+		// do the work...
+		document.querySelectorAll('th').forEach(th => th.addEventListener('click', (() => {
+			const table = th.closest('table');
+			Array.from(table.querySelectorAll('tr:nth-child(n+2)'))
+				.sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
+				.forEach(tr => table.appendChild(tr) );
+		})));
+	} 
+	
+	
+		
+	//Adds an item type if it does not already exists in the item type selection box list
+	function addItemTypeToList(type){
+		for (i = 0; i < document.getElementById("itemType").length; ++i){
+			if (document.getElementById("itemType").options[i].value == type){
+			  return
+			}
+		}
+		var x = document.getElementById("itemType");
+		var option = document.createElement("option");
+		option.text = type;
+		option.value = type;
+		x.add(option); 
+	} 
+	
+	//When the item type select box is changed
+	function itemType_change(){
+		//updateItemList()
+	} 
+	
+	//When the OK button is clicked
+	function btn_OK_Click(){
+		updateItemList()
+	} 
+	
+	//Gets the value of the item type select element
+	function get_itemType_value(){
+		return document.getElementById("itemType").value;
+	} 
+	
+
+  </script>
+</head>
+
+<body>
+
+<div class="box">
+  <header>
+  <h2>Item existence analyser</h2>
+  <p>Find out where an item spawns, what recipes are used to create it, what recipes is an item used in. (coming soon: what profession starts with this item, where can an item be harvested)</p>
+</header>
+  <div class="row content">
+  	<table border="1" width="100%" height="100%">
+  		<tr>
+  			<td valign="top" width="25%" bgcolor="#ccc">
+  <nav>
+    <ul>
+      <li>Item type</li>
+      <li>  <select id = "itemType" onchange = "itemType_change()"><option value = "Any">Any</option></select></li>
+      <li> <button onclick="btn_OK_Click()">OK</button> </li>
+    </ul>
+	<div id="itemList">
+	
+	</div>
+  </nav>
+  </td>
+  <td valign="top" width="75%" bgcolor="#f1f1f1">
+  <article>
+    <h1>Results</h1>
+    <p id="itemDescription"></p>
+    <table>
+    	<tr>
+    		<td valign="top"><p id="itemGroupResults">Select a category and subcategory on the left and press OK</p></td>	
+    		<td valign="top"><p id="inRecipeResults"></p></td>
+    		<td valign="top"><p id="fromRecipeResults"></p></td>	
+    	</tr>
+    </table>
+  </article>
+  </td>
+  </tr>
+</table>
+</section>
+  </div>
+  
+<footer>
+  <p>https://github.com/lispcoc/cdda-js-itembrowser</p>
+</footer>
+</div>
+
+</body>
+
+</html>
