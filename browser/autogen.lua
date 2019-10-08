@@ -121,6 +121,26 @@ function is_itemgroups_type(t)
   return false
 end
 
+
+function getContainingFolderName(filepath)
+  local shsh = getPath(filepath,"\\")
+  local words = {}
+  for w in (shsh):gmatch("([^\\]*)\\") do 
+  	table.insert(words, w) 
+  end
+  local wordslength = 0
+  for n, w in ipairs(words) do
+	wordslength = wordslength + 1
+  end
+  local tilesetfolder = ""
+  for n, w in ipairs(words) do
+	if n == wordslength then
+	  tilesetfolder = w
+	end
+  end
+  return tilesetfolder
+end
+
 function translate_table(lang_data, t)
   local translate_members = {
     "name",
@@ -174,6 +194,7 @@ local data_array = {}
 local list = io.open("rsc/list.txt")
 local filepath = list:read()
 local answer
+local obsolete = false
 
 repeat
  io.write("Do you want to translate the JSON data?? ")
@@ -183,43 +204,62 @@ until answer=="y" or answer=="n"
 
 
 while filepath do
-  local jsonfile = io.open(filepath)
-  if jsonfile then
-    print("Processing : " .. filepath)
-    local data = json.decode(jsonfile:read("*a"))
-    for key, val in pairs(data) do
-      if type(val) == "table" then
-        local type_val = val["type"]
-		if answer=="y" then
-			if is_item_type(type_val) then table.insert(items, translate_table(lang_data, val))
-			elseif is_recipe_type(type_val) then table.insert(recipes, translate_table(lang_data, val)) 
-			elseif is_requirement_type(type_val) then table.insert(requirements, translate_table(lang_data, val)) 
-			elseif is_material_type(type_val) then table.insert(materials, translate_table(lang_data, val)) 
-			elseif is_flag_type(type_val) then table.insert(flags, translate_table(lang_data, val)) 
-			elseif is_technique_type(type_val) then table.insert(techniques, translate_table(lang_data, val)) 
-			elseif is_skill_type(type_val) then table.insert(skills, translate_table(lang_data, val)) 
-			elseif is_tool_quality_type(type_val) then table.insert(tool_qualitys, translate_table(lang_data, val)) 
-			elseif is_itemgroups_type(type_val) then table.insert(itemgroups, translate_table(lang_data, val)) 
-			elseif is_ammunition_type(type_val) then table.insert(ammunition_types, translate_table(lang_data, val)) end
-	    else
-			if is_item_type(type_val) then table.insert(items, val) 
-			elseif is_recipe_type(type_val) then table.insert(recipes, val) 
-			elseif is_requirement_type(type_val) then table.insert(requirements, val) 
-			elseif is_material_type(type_val) then table.insert(materials, val) 
-			elseif is_flag_type(type_val) then table.insert(flags, val) 
-			elseif is_technique_type(type_val) then table.insert(techniques, val) 
-			elseif is_skill_type(type_val) then table.insert(skills, val) 
-			elseif is_tool_quality_type(type_val) then table.insert(tool_qualitys, val) 
-			elseif is_itemgroups_type(type_val) then table.insert(itemgroups, val) 
-			elseif is_ammunition_type(type_val) then table.insert(ammunition_types, val) end
-		end
-      end
+	obsolete = false
+  if string.find(filepath,"obsolete") then
+    if (string.find(filepath,"obsolete") > -1) then
+	obsolete = true
     end
   end
-  io.close(jsonfile)
-  filepath = list:read()
+  
+  if obsolete==false then
+	  local jsonfile = io.open(filepath)
+	  if jsonfile then
+		print("Processing : " .. filepath)
+		local data = json.decode(jsonfile:read("*a"))
+		for key, val in pairs(data) do
+		  if type(val) == "table" then
+			local type_val = val["type"]
+			if answer=="y" then
+				if is_item_type(type_val) then table.insert(items, translate_table(lang_data, val))
+				elseif is_recipe_type(type_val) then table.insert(recipes, translate_table(lang_data, val)) 
+				elseif is_requirement_type(type_val) then table.insert(requirements, translate_table(lang_data, val)) 
+				elseif is_material_type(type_val) then table.insert(materials, translate_table(lang_data, val)) 
+				elseif is_flag_type(type_val) then table.insert(flags, translate_table(lang_data, val)) 
+				elseif is_technique_type(type_val) then table.insert(techniques, translate_table(lang_data, val)) 
+				elseif is_skill_type(type_val) then table.insert(skills, translate_table(lang_data, val)) 
+				elseif is_tool_quality_type(type_val) then table.insert(tool_qualitys, translate_table(lang_data, val)) 
+				elseif is_itemgroups_type(type_val) then table.insert(itemgroups, translate_table(lang_data, val)) 
+				elseif is_ammunition_type(type_val) then table.insert(ammunition_types, translate_table(lang_data, val)) end
+			else
+				if is_item_type(type_val) then table.insert(items, val) 
+				elseif is_recipe_type(type_val) then table.insert(recipes, val) 
+				elseif is_requirement_type(type_val) then table.insert(requirements, val) 
+				elseif is_material_type(type_val) then table.insert(materials, val) 
+				elseif is_flag_type(type_val) then table.insert(flags, val) 
+				elseif is_technique_type(type_val) then table.insert(techniques, val) 
+				elseif is_skill_type(type_val) then table.insert(skills, val) 
+				elseif is_tool_quality_type(type_val) then table.insert(tool_qualitys, val) 
+				elseif is_itemgroups_type(type_val) then table.insert(itemgroups, val) 
+				elseif is_ammunition_type(type_val) then table.insert(ammunition_types, val) end
+			end
+		  end
+		end
+	end
+	  io.close(jsonfile)
+  end
+	  filepath = list:read()
 end
 io.close(list)
+
+getPath=function(str,sep)
+    sep=sep or'/'
+    return str:match("(.*"..sep..")")
+end
+
+--x = "/home/user/.local/share/app/some_file"
+--y = "C:\\Program Files\\app\\some_file"
+--print(getPath(x))
+--print(getPath(y,"\\"))
 
 
 list = io.open("rsc/list_gfx.txt")
@@ -228,6 +268,8 @@ filepath = list:read()
 
 while filepath do
   local jsonfile = io.open(filepath)
+  local tileset = json.decode('{"tileset": "' .. getContainingFolderName(filepath) .. '"}' )
+  table.insert(gfx, tileset)
   if jsonfile then
     print("Processing : " .. filepath)
     local data = json.decode(jsonfile:read("*a"))
