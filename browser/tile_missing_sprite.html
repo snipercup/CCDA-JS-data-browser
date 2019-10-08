@@ -98,19 +98,63 @@ footer {
   
 	//When the page is done loading
 	$(document).ready(function () {
+		fillTilesetList()
 		fillItemTypeList()
 	});
 	
+	//Gets the value of the item type select element
+	function get_tileset_value(){
+		return document.getElementById("tileset").value;
+	} 
 	
-	//Updates the list of items on the left
-	function fillItemTypeList(){
-		document.getElementById("itemList").innerHTML = "";
-		for (var item of items) {
-			if (item.name && item.id) {
-				addItemTypeToList(item.type); //Adds an item type to the item type selection box list
+	//Checks to see if the item has a sprite
+	function itemDoesntHaveSprite(itemID) {
+		var array
+		var tilid
+		var tilesetname = ""
+		for (var gf of gfx) {
+			if (gf.tileset) {
+				if (gf.tileset == get_tileset_value()) {
+					tilesetname = gf.tileset
+							//console.log("tilesetname = " + tilesetname)
+				}
+			} else {
+				if (tilesetname) {
+					if (Array.isArray(gf)) {
+						for (var g of gf) {
+							if (g.tiles) {
+								//console.log("tilesetname1 = " + tilesetname)
+								if (typeof g.tiles !== 'undefined') {
+									for (var til of g.tiles) {
+										if(til.id.indexOf(itemID) > -1){
+											if (Array.isArray(til.id)) {
+												for (var tileid of til.id) {
+													if(tileid == itemID){
+														return false;	//Found a sprite for the item, so return false
+													}
+												}
+											} else {
+												if(til.id == itemID){
+														return false;	//Found a sprite for the item, so return false
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					tilesetname = ""
+				}
 			}
 		}
-	} 
+		return true; //No sprite for the item, return true
+	}
+	
+	//Updates the results table
+	function updateResultsTable(htmlString) {
+		document.getElementById("itemGroupResults").innerHTML = htmlString;
+	}
 	
 	//Creates the results table from an item and itemgroups
 	function createResultsTable(type) {
@@ -132,30 +176,35 @@ footer {
 		updateResultsTable(htmlString);
 	}
 	
-	
-	//Checks to see if the item has a sprite
-	function itemDoesntHaveSprite(itemID) {
-		var array
-		var tilid
+	//Updates the list of items on the left
+	function fillTilesetList(){
+		document.getElementById("itemList").innerHTML = "";
 		for (var gf of gfx) {
-			if (typeof gf[0].tiles !== 'undefined') {
-				for (var til of gf[0].tiles) {
-					if(til.id.indexOf(itemID) > -1){
-						if (Array.isArray(til.id)) {
-							for (var tileid of til.id) {
-								if(tileid == itemID){
-									return false;	//Found a sprite for the item, so return false
-								}
-							}
-						} else {
-							if(til.id == itemID){
-						}
-					}
-				}
+			if (gf.tileset) {
+				var x = document.getElementById("tileset");
+				var option = document.createElement("option");
+				option.text = gf.tileset;
+				option.value = gf.tileset;
+				x.add(option); 
 			}
 		}
-		return true; //No sprite for the item, return true
-	}
+	} 
+	
+	
+	//Updates the list of items on the left
+	function fillItemTypeList(){
+		document.getElementById("itemList").innerHTML = "";
+		for (var item of items) {
+			if (item.name && item.id) {
+				addItemTypeToList(item.type); //Adds an item type to the item type selection box list
+			}
+		}
+	} 
+	
+	
+	
+	
+	
 	
 	//Checks to see if the item has a sprite
 	function itemdDoesntHaveSprite() {
@@ -168,6 +217,9 @@ footer {
 		}
 		return true; //No sprite for the item, return true
 	}
+	
+	
+		
 	
 		
 	//Adds an item type if it does not already exists in the item type selection box list
@@ -185,6 +237,11 @@ footer {
 	} 
 	
 	//When the item type select box is changed
+	function tileset_change(){
+		//updateItemList()
+	} 
+	
+	//When the item type select box is changed
 	function itemType_change(){
 		//updateItemList()
 	} 
@@ -199,12 +256,8 @@ footer {
 	function get_itemType_value(){
 		return document.getElementById("itemType").value;
 	} 
-	
-	//Updates the results table
-	function updateResultsTable(htmlString) {
-		document.getElementById("itemGroupResults").innerHTML = htmlString;
-	}
 
+	
   </script>
 </head>
 
@@ -220,6 +273,8 @@ footer {
   			<td valign="top" width="25%" bgcolor="#ccc">
   <nav>
     <ul>
+      <li>Tileset</li>
+      <li>  <select id = "tileset" onchange = "tileset_change()"><option value = "gfx">gfx</option></select></li>
       <li>Item type</li>
       <li>  <select id = "itemType" onchange = "itemType_change()"><option value = "Any">Any</option></select></li>
       <li> <button onclick="btn_OK_Click()">OK</button> </li>
