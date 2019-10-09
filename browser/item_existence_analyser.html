@@ -100,6 +100,54 @@ footer {
 		fillItemTypeList()
 	}); 
 	
+	//Updates the list of items on the left
+	function updateItemList(){
+		document.getElementById("itemList").innerHTML = "";
+		var numItemGroups;
+		var numItemInRecipes;
+		var numItemFromRecipes;
+		var total;
+		var htmlString;
+		
+		htmlString = "<p>click the column heads to sort</p>";
+		htmlString += "<table>";
+		htmlString += "<tr>"
+		htmlString += "<th>Item name</th>"
+		htmlString += "<th class='vertical'><div class='vertical'>Item<BR>groups</div></th>"
+		htmlString += "<th class='vertical'><div class='vertical'>Used in recipes</div></th>"
+		htmlString += "<th class='vertical'><div class='vertical'>From recipes</div></th>"
+		htmlString += "<th class='vertical'><div class='vertical'>Mapgen</div></th>"
+		htmlString += "<th class='vertical'><div class='vertical'>Total</div></th>"
+		htmlString += "</tr>";
+		
+		for (var item of items) {
+			if (item.name && item.id) {
+				if (item.type == get_itemType_value() || get_itemType_value() == "Any") {
+					numItemGroups = getItemItemgroups(item.id).length
+					numItemInRecipes = getItemInRecipes(item.id).length
+					numItemFromRecipes = getItemFromRecipes(item.id).length
+					total = numItemGroups + numItemInRecipes + numItemFromRecipes
+					
+					htmlString += "<tr>";
+					if (total == 0){
+						htmlString += "<td>" + '<a style="color:red;" id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
+					} else {
+						htmlString += "<td>" + '<a id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
+					}
+					htmlString += "<td style='text-align: center;'><span title='This item is in "+numItemGroups+" itemgroups'>" + numItemGroups + '</span></td>';
+					htmlString += "<td style='text-align: center;'><span title='This item is in "+numItemInRecipes+" recipes'>" + numItemInRecipes + '</span></td>';
+					htmlString += "<td style='text-align: center;'><span title='This item comes from "+numItemFromRecipes+" recipes'>" + numItemFromRecipes + '</span></td>';
+					htmlString += "<td style='text-align: center;'><span title='Coming soon: number of mapgens'>" + 0 + '</span></td>';
+					htmlString += "<td style='text-align: center;'>" + total + '</td>';
+					htmlString += "</tr>";
+				}
+			}
+		}
+		htmlString += "</table>";
+		$('#itemList').append(htmlString);
+		tableSort();
+	} 
+	
 	//Returns that item list entry from the item group.
 	function getItemEntryFromItemGroup(itemID, itemgroup) {
 		if (itemgroup.items && itemgroup.type == "item_group"){
@@ -146,52 +194,6 @@ footer {
 		}
 		return itemGroupList;
 	}
-	
-	//Updates the list of items on the left
-	function updateItemList(){
-		document.getElementById("itemList").innerHTML = "";
-		var numItemGroups;
-		var numItemInRecipes;
-		var numItemFromRecipes;
-		var total;
-		var htmlString;
-		
-		htmlString = "<p>click the column heads to sort</p>";
-		htmlString += "<table>";
-		htmlString += "<tr>"
-		htmlString += "<th>Item name</th>"
-		htmlString += "<th class='vertical'><div class='vertical'>Item<BR>groups</div></th>"
-		htmlString += "<th class='vertical'><div class='vertical'>Used in recipes</div></th>"
-		htmlString += "<th class='vertical'><div class='vertical'>From recipes</div></th>"
-		htmlString += "<th class='vertical'><div class='vertical'>Total</div></th>"
-		htmlString += "</tr>";
-		
-		for (var item of items) {
-			if (item.name && item.id) {
-				if (item.type == get_itemType_value() || get_itemType_value() == "Any") {
-					numItemGroups = getItemItemgroups(item.id).length
-					numItemInRecipes = getItemInRecipes(item.id).length
-					numItemFromRecipes = getItemFromRecipes(item.id).length
-					total = numItemGroups + numItemInRecipes + numItemFromRecipes
-					
-					htmlString += "<tr>";
-					if (total == 0){
-						htmlString += "<td>" + '<a style="color:red;" id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
-					} else {
-						htmlString += "<td>" + '<a id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
-					}
-					htmlString += "<td style='text-align: center;'>" + numItemGroups + '</td>';
-					htmlString += "<td style='text-align: center;'>" + numItemInRecipes + '</td>';
-					htmlString += "<td style='text-align: center;'>" + numItemFromRecipes + '</td>';
-					htmlString += "<td style='text-align: center;'>" + total + '</td>';
-					htmlString += "</tr>";
-				}
-			}
-		}
-		htmlString += "</table>";
-		$('#itemList').append(htmlString);
-		tableSort();
-	} 
 	
 	//Gets the recipes the item is in
 	function getItemFromRecipes(itemID) {
