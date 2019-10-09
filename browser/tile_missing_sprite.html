@@ -79,6 +79,7 @@ footer {
   <script type="text/javascript" src="js/jquery.tinysort.min.js"></script>
   <script type="text/javascript" src="rsc/data.js"></script>
   <script type="text/javascript" src="rsc/gfx.js"></script>
+  <script type="text/javascript" src="rsc/terrain.js"></script>
   <script type="text/javascript" src="js/cdda.js"></script>
   <script type="text/javascript" src="js/JsonFlagClass.js"></script>
   <script type="text/javascript" src="js/MaterialClass.js"></script>
@@ -102,49 +103,108 @@ footer {
 		fillItemTypeList()
 	});
 	
-	//Gets the value of the item type select element
-	function get_tileset_value(){
-		return document.getElementById("tileset").value;
-	} 
+	//Creates the results table from an item and itemgroups
+	function createCSV(type) {
+		var csvArray = [];
+		var arrayEntry
+		if (get_type_value() == "Item") {
+			for (var item of items) {
+				if (item.name && item.id) {
+					if (item.type == get_itemType_value() || get_itemType_value() == "Any") {
+						if (tileDoesntHaveSprite(item.id)) {
+							arrayEntry = [item.id, item.looks_like, 0, 0];
+							csvArray.push(arrayEntry); 
+						}
+					}
+				}
+			}
+		} else if (get_type_value() == "Terrain") {
+			for (var terra of terrain) {
+				if (terra.name && terra.id) {
+					if (terra.type == get_itemType_value() || get_itemType_value() == "Any") {
+						if (tileDoesntHaveSprite(terra.id)) {
+							arrayEntry = [terra.id, terra.looks_like, 0, 0];
+							csvArray.push(arrayEntry); 
+						}
+					}
+				}
+			}
+		} else {
+			alert("wrong type specified");
+		}
+		arrayToCSV(csvArray);
+	}
+	
+	//Creates the results table from an item and itemgroups
+	function getItemResults() {
+		var htmlString = "";
+		for (var item of items) {
+			if (item.name && item.id) {
+				if (item.type == get_itemType_value() || get_itemType_value() == "Any") {
+					if (tileDoesntHaveSprite(item.id)) {
+						htmlString += "<tr>";
+						htmlString += "<td>" + '<span>' + item.id + '</span></td>';
+						htmlString += "<td>" + '<span>' + item.looks_like + '</span></td>';
+						htmlString += "</tr>";
+					}
+				}
+			}
+		}
+		return htmlString;
+	}
+	
+	//Creates the results table from an item and itemgroups
+	function getTerrainResults() {
+		var htmlString = "";
+		for (var terra of terrain) {
+			if (terra.name && terra.id) {
+				if (tileDoesntHaveSprite(terra.id)) {
+					htmlString += "<tr>";
+					htmlString += "<td>" + '<span>' + terra.id + '</span></td>';
+					htmlString += "<td>" + '<span>' + terra.looks_like + '</span></td>';
+					htmlString += "</tr>";
+				}
+			}
+		}
+		return htmlString;
+	}
+	
 	
 	//Checks to see if the item has a sprite
-	function itemDoesntHaveSprite(itemID) {
+	function tileDoesntHaveSprite(tileID) {
 		var array
-		var tilid
 		var tilesetname = ""
 		for (var gf of gfx) {
 			if (gf.tileset) {
 				if (gf.tileset == get_tileset_value()) {
 					tilesetname = gf.tileset
-							//console.log("tilesetname = " + tilesetname)
 				}
 			} else {
 				if (tilesetname) {
 					if (Array.isArray(gf)) {
 						for (var g of gf) {
 							if (g.tiles) {
-								//console.log("tilesetname1 = " + tilesetname)
 								if (typeof g.tiles !== 'undefined') {
 									for (var til of g.tiles) {
-										if(til.id.indexOf(itemID) > -1){
+										if(til.id.indexOf(tileID) > -1){
 											if (Array.isArray(til.id)) {
-												for (var tileid of til.id) {
-													if(tileid == itemID){
+												for (var tilid of til.id) {
+													if(tilid == tileID){
 														return false;	//Found a sprite for the item, so return false
 													}
 												}
 											} else {
-												if(til.id == itemID){
+												if(til.id == tileID){
 														return false;	//Found a sprite for the item, so return false
 												}
 											}
 										}
 									}
 								}
+								tilesetname = ""
 							}
 						}
 					}
-					tilesetname = ""
 				}
 			}
 		}
@@ -160,21 +220,38 @@ footer {
 	function createResultsTable(type) {
 		var htmlString;
 		htmlString = "<table>";
-		htmlString += "<tr><td>Item name</td></tr>";
-		for (var item of items) {
-			if (item.name && item.id) {
-				if (item.type == get_itemType_value() || get_itemType_value() == "Any") {
-					if (itemDoesntHaveSprite(item.id)) {
-						htmlString += "<tr>";
-						htmlString += "<td>" + '<a id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
-						htmlString += "</tr>";
-					}
-				}
-			}
+		if (get_type_value() == "Item") {
+			htmlString += "<tr><td>Item name</td><td>Looks like</td></tr>";
+			htmlString += getItemResults()
+		} else if (get_type_value() == "Terrain") {
+			htmlString += "<tr><td>Terrain name</td><td>Looks like</td></tr>";
+			htmlString += getTerrainResults()
+		} else {
+			alert("wrong type specified");
 		}
 		htmlString += "</table>";
 		updateResultsTable(htmlString);
 	}
+	
+	//Updates the results table
+	function arrayToCSV(jsarray) {
+		let csvContent = "data:text/csv;charset=utf-8,";
+
+		jsarray.forEach(function(rowArray) {
+			let row = rowArray.join(",");
+			csvContent += row + "\r\n";
+		});
+		var encodedUri = encodeURI(csvContent);
+		window.open(encodedUri);
+	}
+	
+	//Gets the value of the item type select element
+	function get_tileset_value(){
+		return document.getElementById("tileset").value;
+	} 
+	
+	
+	
 	
 	//Updates the list of items on the left
 	function fillTilesetList(){
@@ -202,10 +279,6 @@ footer {
 	} 
 	
 	
-	
-	
-	
-	
 	//Checks to see if the item has a sprite
 	function itemdDoesntHaveSprite() {
 		for (var gf of gfx) {
@@ -217,9 +290,6 @@ footer {
 		}
 		return true; //No sprite for the item, return true
 	}
-	
-	
-		
 	
 		
 	//Adds an item type if it does not already exists in the item type selection box list
@@ -246,15 +316,29 @@ footer {
 		//updateItemList()
 	} 
 	
-	//When the OK button is clicked
-	function btn_OK_Click(){
+	//When the item type select box is changed
+	function type_change(){
+		//updateItemList()
+	} 
+	
+	//When the Results button is clicked
+	function btn_Results_Click(){
 		createResultsTable()
-		//itemdDoesntHaveSprite()
+	} 
+	
+	//When the CSV button is clicked
+	function btn_Csv_Click(){
+		createCSV()
 	} 
 	
 	//Gets the value of the item type select element
 	function get_itemType_value(){
 		return document.getElementById("itemType").value;
+	} 
+	
+	//Gets the value of the item type select element
+	function get_type_value(){
+		return document.getElementById("type").value;
 	} 
 
 	
@@ -275,9 +359,15 @@ footer {
     <ul>
       <li>Tileset</li>
       <li>  <select id = "tileset" onchange = "tileset_change()"><option value = "gfx">gfx</option></select></li>
+      <li>type</li>
+      <li>  <select id = "type" onchange = "type_change()">
+	  <option value = "Item">Item</option>
+	  <option value = "Terrain">Terrain</option>
+	  </select></li>
       <li>Item type</li>
       <li>  <select id = "itemType" onchange = "itemType_change()"><option value = "Any">Any</option></select></li>
-      <li> <button onclick="btn_OK_Click()">OK</button> </li>
+      <li> <button onclick="btn_Results_Click()">Show results</button>
+	  <button onclick="btn_Csv_Click()">To csv</button> </li>
     </ul>
 	<div id="itemList">
 	

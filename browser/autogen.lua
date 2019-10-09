@@ -18,6 +18,7 @@ tool_quality_type = "tool_quality"
 requirement_type = "requirement"
 ammunition_type = "ammunition_type"
 itemgroups_type = "item_group"
+terrain_type = "terrain"
 
 item_types = {
   "AMMO",
@@ -121,6 +122,28 @@ function is_itemgroups_type(t)
   return false
 end
 
+function is_terrain_type(t)
+  if t == terrain_type then
+    return true
+  end
+  return false
+end
+
+function getException(filepath)
+  local exception = false
+  if string.find(filepath,"obsolete") then
+    if (string.find(filepath,"obsolete") > -1) then
+	exception = true
+    end
+  end
+  if string.find(filepath,"fake") then
+    if (string.find(filepath,"fake") > -1) then
+	exception = true
+    end
+  end
+  return exception
+end
+
 
 function getContainingFolderName(filepath)
   local shsh = getPath(filepath,"\\")
@@ -189,12 +212,13 @@ local mod_tool_qualitys = {}
 local ammunition_types = {}
 local mod_ammunition_types = {}
 local itemgroups = {}
+local terrain = {}
 local gfx = {}
 local data_array = {}
 local list = io.open("rsc/list.txt")
 local filepath = list:read()
 local answer
-local obsolete = false
+local exception = false
 
 repeat
  io.write("Do you want to translate the JSON data?? ")
@@ -204,14 +228,7 @@ until answer=="y" or answer=="n"
 
 
 while filepath do
-	obsolete = false
-  if string.find(filepath,"obsolete") then
-    if (string.find(filepath,"obsolete") > -1) then
-	obsolete = true
-    end
-  end
-  
-  if obsolete==false then
+  if getException(filepath)==false then
 	  local jsonfile = io.open(filepath)
 	  if jsonfile then
 		print("Processing : " .. filepath)
@@ -228,7 +245,8 @@ while filepath do
 				elseif is_technique_type(type_val) then table.insert(techniques, translate_table(lang_data, val)) 
 				elseif is_skill_type(type_val) then table.insert(skills, translate_table(lang_data, val)) 
 				elseif is_tool_quality_type(type_val) then table.insert(tool_qualitys, translate_table(lang_data, val)) 
-				elseif is_itemgroups_type(type_val) then table.insert(itemgroups, translate_table(lang_data, val)) 
+				elseif is_itemgroups_type(type_val) then table.insert(itemgroups, translate_table(lang_data, val))  
+				elseif is_terrain_type(type_val) then table.insert(terrain, translate_table(lang_data, val)) 
 				elseif is_ammunition_type(type_val) then table.insert(ammunition_types, translate_table(lang_data, val)) end
 			else
 				if is_item_type(type_val) then table.insert(items, val) 
@@ -240,6 +258,7 @@ while filepath do
 				elseif is_skill_type(type_val) then table.insert(skills, val) 
 				elseif is_tool_quality_type(type_val) then table.insert(tool_qualitys, val) 
 				elseif is_itemgroups_type(type_val) then table.insert(itemgroups, val) 
+				elseif is_terrain_type(type_val) then table.insert(terrain, val) 
 				elseif is_ammunition_type(type_val) then table.insert(ammunition_types, val) end
 			end
 		  end
@@ -256,18 +275,13 @@ getPath=function(str,sep)
     return str:match("(.*"..sep..")")
 end
 
---x = "/home/user/.local/share/app/some_file"
---y = "C:\\Program Files\\app\\some_file"
---print(getPath(x))
---print(getPath(y,"\\"))
-
-
+--write gfx data to a lua table
 list = io.open("rsc/list_gfx.txt")
 filepath = list:read()
 
-
 while filepath do
   local jsonfile = io.open(filepath)
+  --add the name of the folder the json file is in to the json array so we get the tileset name
   local tileset = json.decode('{"tileset": "' .. getContainingFolderName(filepath) .. '"}' )
   table.insert(gfx, tileset)
   if jsonfile then
@@ -453,6 +467,13 @@ io.output("rsc/gfx.js")
 
 io.write("var gfx = ")
 io.write(json.encode(gfx))
+io.write(";\n")
+
+
+io.output("rsc/terrain.js")
+
+io.write("var terrain = ")
+io.write(json.encode(terrain))
 io.write(";\n")
 
 --[[
