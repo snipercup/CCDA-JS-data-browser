@@ -121,6 +121,21 @@ function is_itemgroups_type(t)
   return false
 end
 
+function getException(filepath)
+  local exception = false
+  if string.find(filepath,"obsolete") then
+    if (string.find(filepath,"obsolete") > -1) then
+	exception = true
+    end
+  end
+  if string.find(filepath,"fake") then
+    if (string.find(filepath,"fake") > -1) then
+	exception = true
+    end
+  end
+  return exception
+end
+
 
 function getContainingFolderName(filepath)
   local shsh = getPath(filepath,"\\")
@@ -194,7 +209,7 @@ local data_array = {}
 local list = io.open("rsc/list.txt")
 local filepath = list:read()
 local answer
-local obsolete = false
+local exception = false
 
 repeat
  io.write("Do you want to translate the JSON data?? ")
@@ -204,14 +219,7 @@ until answer=="y" or answer=="n"
 
 
 while filepath do
-	obsolete = false
-  if string.find(filepath,"obsolete") then
-    if (string.find(filepath,"obsolete") > -1) then
-	obsolete = true
-    end
-  end
-  
-  if obsolete==false then
+  if getException(filepath)==false then
 	  local jsonfile = io.open(filepath)
 	  if jsonfile then
 		print("Processing : " .. filepath)
