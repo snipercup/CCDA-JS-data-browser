@@ -78,6 +78,7 @@ footer {
   <script type="text/javascript" src="js/jquery.tablesorter.min.js"></script>
   <script type="text/javascript" src="js/jquery.tinysort.min.js"></script>
   <script type="text/javascript" src="rsc/data.js"></script>
+  <script type="text/javascript" src="rsc/mapgen.js"></script>
   <script type="text/javascript" src="js/cdda.js"></script>
   <script type="text/javascript" src="js/JsonFlagClass.js"></script>
   <script type="text/javascript" src="js/MaterialClass.js"></script>
@@ -98,18 +99,261 @@ footer {
 	//When the page is done loading
 	$(document).ready(function () {
 		fillItemTypeList()
-	}); 
+	});
+	
+	//Creates the results table from an item and itemgroups
+	function createItemgroupResultsTable(itemGroupList) {
+		var htmlString;
+		var counter = 0;
+		if (itemGroupList.length > 0){
+			htmlString = "<table border='1'>";
+			htmlString += "<tr><td>Itemgroup name</td></tr>";
+			var itemEntry;
+			for (var itemgroup of itemGroupList) {
+				counter = 0;
+				htmlString += "<tr>";
+				htmlString += "<td>" 
+				for (var it of itemgroup) {
+					if (counter == 0) {
+						htmlString += "<b>" + it[0] + "</b> -> "
+					} else if (counter < itemgroup.length-1){
+						htmlString += it[0] + "(" + it[1] + ") -> "
+					} else {
+						htmlString += it[0] + "(" + it[1] + ")"
+					}
+					counter = counter + 1;
+				}
+				htmlString += "</td>" 
+				htmlString += "</tr>";
+			}
+			htmlString += "</table>";
+		} else {
+			htmlString = "<div>No itemgroup results</div>";
+		}
+		updateItemgroupResultsTable(htmlString);
+	}
+	
+	//Returns that item list entry from the item group.
+	function getItemEntryFromItemGroup(itemID, itemgroup) {
+		var itemgroupList = []
+		if (itemgroup.items && itemgroup.type == "item_group"){
+			for (var itemInGroup of itemgroup.items) {
+				if (itemInGroup[0] == itemID) {
+					return [[itemID, itemInGroup[1]]];
+				}
+				if (itemInGroup.item == itemID) {
+					return [[itemID, itemInGroup.prob]];
+				}
+				if (itemInGroup.group) {
+		     		itemEntry = getItemEntryFromItemGroup(itemID, getItemgroupFromID(itemInGroup.group)); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
+					if (itemEntry) {
+						itemgroupList = [[itemInGroup.group, itemInGroup.prob]];
+						for (var entryListItem of itemEntry) {
+							itemgroupList.push(entryListItem);
+						}
+						return itemgroupList;
+					}
+				}
+			}
+		}
+		if (itemgroup.entries && itemgroup.type == "item_group"){
+			for (var entryInGroup of itemgroup.entries) {
+				if (entryInGroup.item == itemID) {
+					return [[itemID, entryInGroup.prob]];
+				}
+				if (entryInGroup.group) {
+					itemEntry = getItemEntryFromItemGroup(itemID, getItemgroupFromID(entryInGroup.group)); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
+					if (itemEntry) {
+						itemgroupList = [[entryInGroup.group, entryInGroup.prob]];
+						for (var entryListItem of itemEntry) {
+							itemgroupList.push(entryListItem);
+						}
+						return itemgroupList;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	
+	//Gets the item groups the item is in
+	function getItemItemgroups(itemID) {
+		var itemEntry;
+		var groupEntry;
+		var itemGroupList = [];
+		var itemEntryList;
+		//Loop every itemgroup
+		for (var itemgroup of itemgroups) {
+			if (itemgroup.id) {
+			  itemEntry = getItemEntryFromItemGroup(itemID, itemgroup); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
+			  if (itemEntry) {
+					groupEntry = [[itemgroup.id, 0]];
+					for (var entryListItem of itemEntry) {
+						groupEntry.push(entryListItem);
+					}
+					itemGroupList.push(groupEntry); 
+				}
+			}
+		}
+		return itemGroupList;
+	}
+	
+	//Checks if an itemgroup is already in an item itemgroup list
+	function isInItemItemgroupList(itemgroupID, itemGroupList) {
+		//Loop every itemgroup
+		for (var itemgroup of itemGroupList) {
+			if (itemgroup[0] == itemgroupID) {
+				return true;
+			}
+		}
+		return itemGroupList;
+	}
+	
+	//Gets the item groups from an itemgroupid
+	function getItemgroupFromID(itemGroupID) {
+										
+		//Loop every itemgroup
+		for (var itemgroup of itemgroups) {
+			if (itemgroup.id) {
+				if (itemgroup.id == itemGroupID) {
+					return itemgroup;
+				}
+			}
+		}
+		return false;
+	}
+	
+	
+	//Gets the mapgen the item is in
+	function getItemMapgen(itemID) {
+		var itemEntry;
+		var itemKey;
+		var mapgenEntry;
+		var mapgenObject;
+		var itemMapgenList = [];
+		//Loop every itemgroup
+		for (var mapgn of mapgen) {
+			if (mapgn.object) {
+				mapgenObject = mapgn.object
+				if (mapgenObject.place_items) {
+					for (var place_it of mapgenObject.place_items) {
+						if (place_it.item) {
+							itemEntry = getItemEntryFromItemGroup(itemID, place_it.item); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
+							if (itemEntry) {
+								mapgenEntry = getMapgenName(mapgenObject)
+								itemMapgenList.push(mapgenEntry); 
+							}
+						}
+					}
+				}
+				if (mapgenObject.items) {
+					if (Array.isArray(mapgenObject.items)) {
+						for (var it of mapgenObject.items) {
+							for (var i of it) {
+								if (i.item) {
+									itemEntry = getItemEntryFromItemGroup(itemID, i.item); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
+									if (itemEntry) {
+										mapgenEntry = getMapgenName(mapgenObject)
+										itemMapgenList.push(mapgenEntry); 
+									}
+								}
+							}
+						}
+					} else {
+						for(key in mapgenObject.items) {
+							itemKey = mapgenObject.items[key];
+							if (Array.isArray(itemKey)) {
+								for (var it of itemKey) {
+									if (it.item) {
+										itemEntry = getItemEntryFromItemGroup(itemID, it.item); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
+										if (itemEntry) {
+											mapgenEntry = getMapgenName(mapgenObject)
+											itemMapgenList.push(mapgenEntry); 
+										}
+									}
+								}
+							} else {
+								if (itemKey.item) {
+									//Get the itemgroup object from the itemgroup name
+									//Check if the itemID is in the specified itemgroup
+									itemEntry = getItemEntryFromItemGroup(itemID, getItemgroupFromID(itemKey.item)); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
+									if (itemEntry) {
+										mapgenEntry = getMapgenName(mapgn)
+										itemMapgenList.push(mapgenEntry); 
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return itemMapgenList;
+	}	
+	
+	//When an item from the list is clicked
+	function select_item(itemhref) {
+		var itemID = itemhref.id
+		var itemGroupList;
+		var itemRecipeList;
+		updateItemDescriptionHTML(itemID);
+		itemGroupList = getItemItemgroups(itemID);
+		itemInRecipeList = getItemInRecipes(itemID);
+		itemFromRecipeList = getItemFromRecipes(itemID);
+		itemMapgenList = getItemMapgen(itemID);
+		createItemgroupResultsTable(itemGroupList);
+		createInRecipeResultsTable(itemInRecipeList);
+		createFromRecipeResultsTable(itemFromRecipeList);
+		createMapgenResultsTable(itemMapgenList);
+	}
+	
+	//Creates the results table from an item and mapgen
+	function createMapgenResultsTable(itemMapgenList) {
+		var htmlString;
+		if (itemMapgenList.length > 0){
+			htmlString = "<table border='1' style='word-break: break-word;'>";
+			htmlString += "<tr><td>Mapgen name</td></tr>";
+			for (var mapgen of itemMapgenList) {
+				htmlString += "<tr>";
+				htmlString += "<td>" + mapgen + "</td>";
+				htmlString += "</tr>";
+			}
+			htmlString += "</table>";
+		} else {
+			htmlString = "<div>No mapgen results</div>";
+		}
+		updateMapgenResultsTable(htmlString);
+	}
+	
+	//Updates the mapgen results table
+	function updateMapgenResultsTable(htmlString) {
+		document.getElementById("mapgenResults").innerHTML = htmlString;
+	}
+	
+	//Gets the name if the mapgen
+	function getMapgenName(mapgen) {
+		var mapgenName = "";
+		if (mapgen.om_terrain) {
+			mapgenName = mapgen.om_terrain;
+		} else if (mapgen.nested_mapgen_id){
+			mapgenName = mapgen.nested_mapgen_id;
+		}
+		return mapgenName;
+	}
+	
 	
 	//Updates the list of items on the left
 	function updateItemList(){
 		document.getElementById("itemList").innerHTML = "";
+		var numItems;
 		var numItemGroups;
 		var numItemInRecipes;
 		var numItemFromRecipes;
 		var total;
 		var htmlString;
+		var i = 0;
 		
-		htmlString = "<p>click the column heads to sort</p>";
+		htmlString = "<p>click the column heads to sort. Note: Fake.json and Obsolete.json are excluded.</p>";
 		htmlString += "<table>";
 		htmlString += "<tr>"
 		htmlString += "<th>Item name</th>"
@@ -148,52 +392,6 @@ footer {
 		tableSort();
 	} 
 	
-	//Returns that item list entry from the item group.
-	function getItemEntryFromItemGroup(itemID, itemgroup) {
-		if (itemgroup.items && itemgroup.type == "item_group"){
-			for (var itemInGroup of itemgroup.items) {
-				if (itemInGroup[0] == itemID) {
-					return itemInGroup;
-				}
-				if (itemInGroup.item == itemID) {
-					return itemInGroup;
-				}
-			}
-		}
-		if (itemgroup.entries && itemgroup.type == "item_group"){
-			for (var entryInGroup of itemgroup.entries) {
-				if (entryInGroup.item == itemID) {
-					if (itemID == "buttermilk") {
-						console.log("entryInGroup.item = " + entryInGroup.item + ", itemID - " + itemID);
-					}
-					return entryInGroup;
-				}
-			}
-		}
-		return false;
-	}
-	
-	//Gets the item groups the item is in
-	function getItemItemgroups(itemID) {
-		var itemEntry;
-		var itemGroupList = [];
-		var itemEntryList;
-		for (var itemgroup of itemgroups) {
-			if (itemgroup.id) {
-				itemEntry = getItemEntryFromItemGroup(itemID, itemgroup)
-			  if (itemEntry) {
-				  if (itemEntry.item) {
-						itemEntryList = [itemgroup.id, itemEntry.item]
-						itemGroupList.push(itemEntryList); 
-					} else {
-						itemEntryList = [itemgroup.id, itemEntry[1]]
-						itemGroupList.push(itemEntryList); 
-					}
-				}
-			}
-		}
-		return itemGroupList;
-	}
 	
 	//Gets the recipes the item is in
 	function getItemFromRecipes(itemID) {
@@ -208,19 +406,6 @@ footer {
 		return recipeList;
 	}
 	
-	//When an item from the list is clicked
-	function select_item(itemhref) {
-		var itemID = itemhref.id
-		var itemGroupList;
-		var itemRecipeList;
-		updateItemDescriptionHTML(itemID);
-		itemGroupList = getItemItemgroups(itemID);
-		itemInRecipeList = getItemInRecipes(itemID);
-		itemFromRecipeList = getItemFromRecipes(itemID);
-		createItemgroupResultsTable(itemGroupList);
-		createInRecipeResultsTable(itemInRecipeList);
-		createFromRecipeResultsTable(itemFromRecipeList);
-	}
 	
 	//Creates the results table from an item and recipes
 	function createFromRecipeResultsTable(itemRecipeList) {
@@ -275,26 +460,6 @@ footer {
 	
 	
 	
-	//Creates the results table from an item and itemgroups
-	function createItemgroupResultsTable(itemGroupList) {
-		var htmlString;
-		if (itemGroupList.length > 0){
-			htmlString = "<table border='1'>";
-			htmlString += "<tr><td>Itemgroup name</td><td>chance</td></tr>";
-			var itemEntry;
-			for (var itemgroup of itemGroupList) {
-				htmlString += "<tr>";
-				htmlString += "<td>" + itemgroup[0] + "</td>";
-				htmlString += "<td>" + itemgroup[1] + "</td>";
-				htmlString += "</tr>";
-			}
-			htmlString += "</table>";
-		} else {
-			htmlString = "<div>No itemgroup results</div>";
-		}
-		updateItemgroupResultsTable(htmlString);
-	}
-	
 	//Returns if the item is a component in the recipe.
 	function isItemInRecipe(itemID, recipe) {
 		var level1
@@ -304,17 +469,9 @@ footer {
 			for (var level1 of recipe.components) {
 				if (Array.isArray(level1)) {
 					for (var level2 of level1) {
-						//if (Array.isArray(level2)) {
-							//for (var level3 of level2) {
-							//	if (level3[0] == itemID) {
-							//		return true;
-							//	}
-							//}
-						//}	else {
-							if (level2[0] == itemID) {
-								return true;
-							}
-						//}
+						if (level2[0] == itemID) {
+							return true;
+						}
 					}
 				}	else {
 					if (level1[0] == itemID) {
@@ -452,11 +609,14 @@ footer {
   <article>
     <h1>Results</h1>
     <p id="itemDescription"></p>
-    <table>
+    <table style="word-wrap: break-word;">
     	<tr>
-    		<td valign="top"><p id="itemGroupResults">Select a category and subcategory on the left and press OK</p></td>	
+			<td valign="top"><p id="itemGroupResults">Select a category and subcategory on the left and press OK</p></td>	
     		<td valign="top"><p id="inRecipeResults"></p></td>
     		<td valign="top"><p id="fromRecipeResults"></p></td>	
+    	</tr>
+    	<tr>	
+    		<td valign="top" width="100px" colspan="3"><span style="width:100px;" id="mapgenResults"></span></td>
     	</tr>
     </table>
   </article>
