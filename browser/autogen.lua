@@ -19,6 +19,7 @@ requirement_type = "requirement"
 ammunition_type = "ammunition_type"
 itemgroups_type = "item_group"
 terrain_type = "terrain"
+mapgen_type = "mapgen"
 
 item_types = {
   "AMMO",
@@ -129,6 +130,15 @@ function is_terrain_type(t)
   return false
 end
 
+function is_mapgen_type(t)
+  if t == mapgen_type then
+    return true
+  elseif t == itemgroup_type then
+    return true
+  end
+  return false
+end
+
 function getException(filepath)
   local exception = false
   if string.find(filepath,"obsolete") then
@@ -213,6 +223,7 @@ local ammunition_types = {}
 local mod_ammunition_types = {}
 local itemgroups = {}
 local terrain = {}
+local mapgen = {}
 local gfx = {}
 local data_array = {}
 local list = io.open("rsc/list.txt")
@@ -246,7 +257,8 @@ while filepath do
 				elseif is_skill_type(type_val) then table.insert(skills, translate_table(lang_data, val)) 
 				elseif is_tool_quality_type(type_val) then table.insert(tool_qualitys, translate_table(lang_data, val)) 
 				elseif is_itemgroups_type(type_val) then table.insert(itemgroups, translate_table(lang_data, val))  
-				elseif is_terrain_type(type_val) then table.insert(terrain, translate_table(lang_data, val)) 
+				elseif is_terrain_type(type_val) then table.insert(terrain, translate_table(lang_data, val))  
+				elseif is_mapgen_type(type_val) then table.insert(mapgen, translate_table(lang_data, val)) 
 				elseif is_ammunition_type(type_val) then table.insert(ammunition_types, translate_table(lang_data, val)) end
 			else
 				if is_item_type(type_val) then table.insert(items, val) 
@@ -259,6 +271,7 @@ while filepath do
 				elseif is_tool_quality_type(type_val) then table.insert(tool_qualitys, val) 
 				elseif is_itemgroups_type(type_val) then table.insert(itemgroups, val) 
 				elseif is_terrain_type(type_val) then table.insert(terrain, val) 
+				elseif is_mapgen_type(type_val) then table.insert(mapgen, val) 
 				elseif is_ammunition_type(type_val) then table.insert(ammunition_types, val) end
 			end
 		  end
@@ -474,6 +487,13 @@ io.output("rsc/terrain.js")
 
 io.write("var terrain = ")
 io.write(json.encode(terrain))
+io.write(";\n")
+
+
+io.output("rsc/mapgen.js")
+
+io.write("var mapgen = ")
+io.write(json.encode(mapgen))
 io.write(";\n")
 
 --[[
