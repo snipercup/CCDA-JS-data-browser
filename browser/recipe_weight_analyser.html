@@ -98,7 +98,7 @@ footer {
   
 	//When the page is done loading
 	$(document).ready(function () {
-		fillItemTypeList()
+		//fillItemTypeList()
 	});
 	
 	//Updates the results table
@@ -109,10 +109,294 @@ footer {
 		htmlString += "<tr><td>Item ID</td><td>"+item.id+"</td></tr>";
 		htmlString += "<tr><td>Item name</td><td>"+item.name+"</td></tr>";
 		htmlString += "<tr><td>Item type</td><td>"+item.type+"</td></tr>";
+		htmlString += "<tr><td>Item weight</td><td>"+getItemRawWeight(item)+"</td></tr>";
+		if(item.count){htmlString += "<tr><td>Item count</td><td>"+item.count+"</td></tr>"};
 		htmlString += "<tr><td>Item description</td><td>"+item.description+"</td></tr>";
 		htmlString += "</table><BR><BR>";
 		document.getElementById("itemDescription").innerHTML = htmlString;
 	}
+	
+	//When an item from the list is clicked
+	function select_item(itemhref) {
+		var itemID = itemhref.id
+		updateItemDescriptionHTML(itemID);
+		createRecipeResultsTable(itemID);
+	}
+	
+	//Creates the results table from an item and recipes
+	function createRecipeResultsTable(recipeID) {
+		var recipe = getRecipeFromRecipeList(recipeID);
+		var htmlString;
+		var altIDString;
+		var altRawWeightString;
+		var altCountString;
+		var altTotalWeightString;
+		var altAvgWeightString;
+		var altCounter;
+		var totalweight = 0;
+		var itemID;
+		var itemCount
+		htmlString = "<table border='1'>";
+		htmlString += "<tr><td>Weight results for:</td><td>" + recipeID + "</td><td></td><td></td><td></td></tr>";
+		htmlString += "<tr>";
+		htmlString += "<td>Components needed</td>";
+		htmlString += "<td>Component weight in g</td>";
+		htmlString += "<td>Component count</td>";
+		htmlString += "<td>Total weight</td>";
+		htmlString += "<td>Avg. weight</td>";
+		htmlString += "</tr>";
+		if (recipe.components && recipe.type == "recipe"){
+			for (var level1 of recipe.components) {
+				if (Array.isArray(level1)) {
+					altIDString = "";
+					altRawWeightString = "";
+					altCountString = "";
+					altTotalWeightString = "";
+					altCounter = 0;
+					altAvgWeightString = 0;
+					htmlString += "<tr>";
+					for (var level2 of level1) {
+						if (level2[0]) {
+							altCounter += 1;
+							itemID = level2[0];
+							itemCount = level2[1];
+							item = getItemFromItemList(itemID);
+							altIDString += itemID + "<br>";
+							altRawWeightString += getItemRawWeight(item) + "<br>";
+							altCountString += itemCount + "<br>";
+							altTotalWeightString += getItemWeightInGrams(item)*itemCount + "<br>";
+							altAvgWeightString += getItemWeightInGrams(item)*itemCount
+						}
+					}
+					totalweight += altAvgWeightString/altCounter
+					htmlString += "<td>" + altIDString + "</td>";
+					htmlString += "<td>" + altRawWeightString + "</td>";
+					htmlString += "<td>" + altCountString + "</td>";
+					htmlString += "<td>" + altTotalWeightString + "</td>";
+					htmlString += "<td>" + altAvgWeightString/altCounter + "</td>";
+					htmlString += "</tr>";
+				}	else {
+					if (level1[0]) {
+						itemID = level1[0];
+						itemCount = level1[1];
+						item = getItemFromItemList(itemID);
+						totalweight += getItemWeightInGrams(item)*itemCount
+						htmlString += "<tr>";
+						htmlString += "<td>" + item.id + "</td>";
+						htmlString += "<td>" + getItemRawWeight(item) + "</td>";
+						htmlString += "<td>" + itemCount + "</td>";
+						htmlString += "<td>" + getItemWeightInGrams(item)*itemCount + "</td>";
+						htmlString += "<td>" + altTotalWeightString + "</td>";
+						htmlString += "</tr>";
+					}
+				}
+			}
+		}
+		
+		htmlString += "<tr>";
+		htmlString += "<td></td>";
+		htmlString += "<td></td>";
+		htmlString += "<td></td>";
+		htmlString += "<td>Total weight</td>";
+		htmlString += "<td>"+totalweight+"</td>";
+		htmlString += "</tr>";
+		htmlString += "</table>";
+		updateRecipeResultsTable(htmlString);
+	}
+	
+	//Gets item json object from the item list
+	function getItemFromItemList(itemID){
+		for (var item of items) {
+			if (itemID == item.id) {
+				return item;
+			}
+		}
+		return false;
+	} 
+	
+	//Gets item json object from the recipe list
+	function getRecipeFromRecipeList(resultID){
+		for (var recipe of recipes) {
+			if (resultID == recipe.result) {
+				return recipe;
+			}
+		}
+		return false;
+	} 
+	
+	function isFloat(n){
+		return Number(n) === n && n % 1 !== 0;
+	}
+	
+	//Returns the total weight of the components in grams
+	function getItemWeightInGrams(item) {
+		var weight = 0;
+		var itemweight;
+		var totalWeightInGrams = 0;
+		if (item.weight){
+			if(Number.isInteger(item.weight)){
+				weight = item.weight;
+			} else if(isFloat(item.weight)){
+				weight = item.weight;
+			} else {
+				if (item.weight.includes("mg")){
+					itemweight = item.weight.slice(0, -3);
+					itemweight = parseInt(itemweight);
+					weight = itemweight/1000;
+				} else if (item.weight.includes("kg")){
+					itemweight = item.weight.slice(0, -3);
+					itemweight = parseInt(itemweight);
+					weight = itemweight*1000;
+				} else {
+					itemweight = item.weight.slice(0, -2);
+					itemweight = parseInt(itemweight);
+					weight = itemweight;
+				}
+			}
+		} else {
+			weight = getItemWeightInGrams(getItemFromItemList(item["copy-from"]))
+		}
+		return weight;
+	}
+	
+	//Returns the weight of the item in grams
+	function getItemRawWeight(item) {
+		var weight = 0;
+		if (item.weight){
+				weight = item.weight;
+		} else {
+			weight = getItemRawWeight(getItemFromItemList(item["copy-from"]))
+		}
+		return weight;
+	}
+	
+	//Returns the total weight of the components in grams
+	function getComponentsTotalWeightInGrams(recipe) {
+		var item;
+		var itemcount;
+		var level1;
+		var level2;
+		var totalWeightInGrams = 0;
+		if (recipe.components && recipe.type == "recipe"){
+			for (var level1 of recipe.components) {
+				if (Array.isArray(level1)) {
+					for (var level2 of level1) {
+						if (level2[0]) {
+							item = getItemFromItemList(level2[0]);
+							itemcount = level2[1];
+						}
+					}
+				}	else {
+					if (level1[0]) {
+						item = getItemFromItemList(level1[0]);
+						itemcount = level1[1];
+					}
+				}
+				totalWeightInGrams = totalWeightInGrams + getItemWeightInGrams(item)*itemcount
+			}
+		}
+		return totalWeightInGrams;
+	}
+	
+	//Updates the list of recipes on the left
+	function updateRecipeList(){
+		document.getElementById("recipeList").innerHTML = "";
+		var totalComponentWeight;
+		var recipeResultWeight;
+		var diffWeight;
+		var htmlString;
+		
+		htmlString = "<p>click the column heads to sort. Note: Fake.json and Obsolete.json are excluded.</p>";
+		htmlString += "<table>";
+		htmlString += "<tr>"
+		htmlString += "<th>Recipe name</th>"
+		htmlString += "<th class='vertical'><div class='vertical'>Difference in grams</div></th>"
+		htmlString += "</tr>";
+		
+		for (var recipe of recipes) {
+			if (recipe.result) {
+				totalComponentWeight = getComponentsTotalWeightInGrams(recipe);
+				recipeResultWeight = getItemWeightInGrams(getItemFromItemList(recipe.result));
+				diffWeight = recipeResultWeight-totalComponentWeight
+					
+				htmlString += "<tr>";
+				if (diffWeight < -10 || diffWeight > 10){
+					htmlString += "<td>" + '<a style="color:red;" id="'+recipe.result+'" href="#" onClick="select_item(this)">' + recipe.result + '</span></td>';
+				} else {
+					htmlString += "<td>" + '<a id="'+recipe.result+'" href="#" onClick="select_item(this)">' + recipe.result + '</span></td>';
+				}
+				htmlString += "<td style='text-align: center;'><span title='This differs "+diffWeight+" grams from the components'>" + diffWeight + '</span></td>';
+				htmlString += "</tr>";
+			}
+		}
+		htmlString += "</table>";
+		$('#recipeList').append(htmlString);
+		tableSort();
+	} 
+	
+	//Returns if the item is a component in the recipe.
+	function isItemInRecipe(itemID, recipe) {
+		var level1
+		var level2
+		var level3
+		if (recipe.components && recipe.type == "recipe"){
+			for (var level1 of recipe.components) {
+				if (Array.isArray(level1)) {
+					for (var level2 of level1) {
+						if (level2[0] == itemID) {
+							return true;
+						}
+					}
+				}	else {
+					if (level1[0] == itemID) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	
+	
+	//When the OK button is clicked
+	function btn_OK_Click(){
+		updateRecipeList()
+	} 
+	
+	
+	
+	//Gets the recipes the item is in
+	function getItemFromRecipes(itemID) {
+		var recipeList = [];
+		for (var recipe of recipes) {
+			if (recipe.result) {
+			  if (recipe.result == itemID) {
+					recipeList.push(recipe.result); 
+				}
+			}
+		}
+		return recipeList;
+	}
+	
+	
+	
+	
+	//Gets the recipes the item is in
+	function getItemInRecipes(itemID) {
+		var inRecipe;
+		var recipeList = [];
+		for (var recipe of recipes) {
+			if (recipe.result) {
+				inRecipe = isItemInRecipe(itemID, recipe)
+			  if (inRecipe) {
+					recipeList.push(recipe.result); 
+				}
+			}
+		}
+		return recipeList;
+	}
+	
+	
 	
 	//Creates the results table from an item and itemgroups
 	function createItemgroupResultsTable(itemGroupList) {
@@ -327,21 +611,7 @@ footer {
 		return itemMapgenList;
 	}	
 	
-	//When an item from the list is clicked
-	function select_item(itemhref) {
-		var itemID = itemhref.id
-		var itemGroupList;
-		var itemRecipeList;
-		updateItemDescriptionHTML(itemID);
-		itemGroupList = getItemItemgroups(itemID);
-		itemInRecipeList = getItemInRecipes(itemID);
-		itemFromRecipeList = getItemFromRecipes(itemID);
-		itemMapgenList = getItemMapgen(itemID);
-		createItemgroupResultsTable(itemGroupList);
-		createInRecipeResultsTable(itemInRecipeList);
-		createFromRecipeResultsTable(itemFromRecipeList);
-		createMapgenResultsTable(itemMapgenList);
-	}
+	
 	
 	//Creates the results table from an item and mapgen
 	function createMapgenResultsTable(itemMapgenList) {
@@ -378,106 +648,7 @@ footer {
 	}
 	
 	
-	//Updates the list of items on the left
-	function updateItemList(){
-		document.getElementById("itemList").innerHTML = "";
-		var numItems;
-		var numItemGroups;
-		var numItemInRecipes;
-		var numItemFromRecipes;
-		var total;
-		var htmlString;
-		var i = 0;
-		
-		htmlString = "<p>click the column heads to sort. Note: Fake.json and Obsolete.json are excluded.</p>";
-		htmlString += "<table>";
-		htmlString += "<tr>"
-		htmlString += "<th>Item name</th>"
-		htmlString += "<th class='vertical'><div class='vertical'>Item<BR>groups</div></th>"
-		htmlString += "<th class='vertical'><div class='vertical'>Used in recipes</div></th>"
-		htmlString += "<th class='vertical'><div class='vertical'>From recipes</div></th>"
-		htmlString += "<th class='vertical'><div class='vertical'>Mapgen</div></th>"
-		htmlString += "<th class='vertical'><div class='vertical'>Total</div></th>"
-		htmlString += "</tr>";
-		
-		for (var item of items) {
-			if (item.name && item.id) {
-				if (item.type == get_itemType_value() || get_itemType_value() == "Any") {
-					numItemGroups = getItemItemgroups(item.id).length
-					numItemInRecipes = getItemInRecipes(item.id).length
-					numItemFromRecipes = getItemFromRecipes(item.id).length
-					total = numItemGroups + numItemInRecipes + numItemFromRecipes
-					
-					htmlString += "<tr>";
-					if (total == 0){
-						htmlString += "<td>" + '<a style="color:red;" id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
-					} else {
-						htmlString += "<td>" + '<a id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
-					}
-					htmlString += "<td style='text-align: center;'><span title='This item is in "+numItemGroups+" itemgroups'>" + numItemGroups + '</span></td>';
-					htmlString += "<td style='text-align: center;'><span title='This item is in "+numItemInRecipes+" recipes'>" + numItemInRecipes + '</span></td>';
-					htmlString += "<td style='text-align: center;'><span title='This item comes from "+numItemFromRecipes+" recipes'>" + numItemFromRecipes + '</span></td>';
-					htmlString += "<td style='text-align: center;'><span title='Coming soon: number of mapgens'>" + 0 + '</span></td>';
-					htmlString += "<td style='text-align: center;'>" + total + '</td>';
-					htmlString += "</tr>";
-				}
-			}
-		}
-		htmlString += "</table>";
-		$('#itemList').append(htmlString);
-		tableSort();
-	} 
 	
-	
-	//Gets the recipes the item is in
-	function getItemFromRecipes(itemID) {
-		var recipeList = [];
-		for (var recipe of recipes) {
-			if (recipe.result) {
-			  if (recipe.result == itemID) {
-					recipeList.push(recipe.result); 
-				}
-			}
-		}
-		return recipeList;
-	}
-	
-	
-	//Creates the results table from an item and recipes
-	function createFromRecipeResultsTable(itemRecipeList) {
-		var htmlString;
-		if (itemRecipeList.length > 0){
-			htmlString = "<table border='1'>";
-			htmlString += "<tr><td>Created from recipe</td></tr>";
-			for (var recipe of itemRecipeList) {
-				htmlString += "<tr>";
-				htmlString += "<td>" + recipe + "</td>";
-				htmlString += "</tr>";
-			}
-			htmlString += "</table>";
-		} else {
-			htmlString = "<div>No from recipe results</div>";
-		}
-		updateFromRecipeResultsTable(htmlString);
-	}
-	
-	//Creates the results table from an item and recipes
-	function createInRecipeResultsTable(itemRecipeList) {
-		var htmlString;
-		if (itemRecipeList.length > 0){
-			htmlString = "<table border='1'>";
-			htmlString += "<tr><td>Used in recipe</td></tr>";
-			for (var recipe of itemRecipeList) {
-				htmlString += "<tr>";
-				htmlString += "<td>" + recipe + "</td>";
-				htmlString += "</tr>";
-			}
-			htmlString += "</table>";
-		} else {
-			htmlString = "<div>No used in recipe results</div>";
-		}
-		updateInRecipeResultsTable(htmlString);
-	}
 	
 	//Updates the results table
 	function updateItemgroupResultsTable(htmlString) {
@@ -490,61 +661,13 @@ footer {
 	}
 	
 	//Updates the results table
-	function updateFromRecipeResultsTable(htmlString) {
-		document.getElementById("fromRecipeResults").innerHTML = htmlString;
+	function updateRecipeResultsTable(htmlString) {
+		document.getElementById("recipeResults").innerHTML = htmlString;
 	}
 	
 	
 	
-	//Returns if the item is a component in the recipe.
-	function isItemInRecipe(itemID, recipe) {
-		var level1
-		var level2
-		var level3
-		if (recipe.components && recipe.type == "recipe"){
-			for (var level1 of recipe.components) {
-				if (Array.isArray(level1)) {
-					for (var level2 of level1) {
-						if (level2[0] == itemID) {
-							return true;
-						}
-					}
-				}	else {
-					if (level1[0] == itemID) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
 	
-	//Gets the recipes the item is in
-	function getItemInRecipes(itemID) {
-		var inRecipe;
-		var recipeList = [];
-		for (var recipe of recipes) {
-			if (recipe.result) {
-				inRecipe = isItemInRecipe(itemID, recipe)
-			  if (inRecipe) {
-					recipeList.push(recipe.result); 
-				}
-			}
-		}
-		return recipeList;
-	}
-	
-	
-	
-	//Gets item json object from the item list
-	function getItemFromItemList(itemID){
-		for (var item of items) {
-			if (itemID == item.id) {
-				return item;
-			}
-		}
-		return false;
-	} 
 	
 	//Updates the list of items on the left
 	function fillItemTypeList(){
@@ -593,11 +716,6 @@ footer {
 		//updateItemList()
 	} 
 	
-	//When the OK button is clicked
-	function btn_OK_Click(){
-		updateItemList()
-	} 
-	
 	//Gets the value of the item type select element
 	function get_itemType_value(){
 		return document.getElementById("itemType").value;
@@ -611,8 +729,8 @@ footer {
 
 <div class="box">
   <header>
-  <h2>Item existence analyser</h2>
-  <p>Find out where an item spawns, what recipes are used to create it, what recipes is an item used in. (coming soon: what profession starts with this item, where can an item be harvested)</p>
+  <h2>Recipe weight analyser</h2>
+  <p>Used to make a list of recipes that has a differen weight then its components.</p>
 </header>
   <div class="row content">
   	<table border="1" width="100%" height="100%">
@@ -620,11 +738,10 @@ footer {
   			<td valign="top" width="25%" bgcolor="#ccc">
   <nav>
     <ul>
-      <li>Item type</li>
-      <li>  <select id = "itemType" onchange = "itemType_change()"><option value = "Any">Any</option></select></li>
+      <li>Make list</li>
       <li> <button onclick="btn_OK_Click()">OK</button> </li>
     </ul>
-	<div id="itemList">
+	<div id="recipeList">
 	
 	</div>
   </nav>
@@ -635,12 +752,7 @@ footer {
     <p id="itemDescription"></p>
     <table style="word-wrap: break-word;">
     	<tr>
-			<td valign="top"><p id="itemGroupResults">Select a category and subcategory on the left and press OK</p></td>	
-    		<td valign="top"><p id="inRecipeResults"></p></td>
-    		<td valign="top"><p id="fromRecipeResults"></p></td>	
-    	</tr>
-    	<tr>	
-    		<td valign="top" width="100px" colspan="3"><span style="width:100px;" id="mapgenResults"></span></td>
+			<td valign="top"><p id="recipeResults">Press OK to start</p></td>	
     	</tr>
     </table>
   </article>
