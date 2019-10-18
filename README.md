@@ -5,6 +5,7 @@
 - Itemgroups analyser: Find out in how many itemgroups an item is, what itemgroups they are and what the spawn chance is. 
 - Item existence analyser: Find out in how many itemgroups, recipes this item is in and how many recipes creates this item
 - Missing sprites: Select a tileset and item type and get the items that do not have a sprite in that tileset.
+- Recipe weight analyser: Check if the resulting item matches the weight of the components.
 
 Once you followed the install instructions, you can open the itemgroups analyser, select a category and press ok. You will get a list if items and the number of itemgroups next to it. If you click an item you will get to see what itemgroups it belongs to and what the spawn chance is. Note that the spawn chance is currently just what is written in the json but it is actually relative to other items in the itemgroup so it's probably lower then what is shown.
  
