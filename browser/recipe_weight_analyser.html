@@ -98,11 +98,135 @@ footer {
   
 	//When the page is done loading
 	$(document).ready(function () {
-		//fillItemTypeList()
+		//When the page loads
 	});
-    
+	
 	//Returns the total weight of the components in grams
-	function getComponentsTotalWeightInGrams(recipe) {
+	function getItemWeightInGrams(item) {
+		var weight = 0;
+		var itemweight;
+		var totalWeightInGrams = 0;
+		if (item.weight){
+			if(Number.isInteger(item.weight)){
+				weight = item.weight;
+			} else if(isFloat(item.weight)){
+				weight = item.weight;
+			} else {
+				if (item.weight.includes("mg")){
+					itemweight = item.weight.slice(0, -3);
+					itemweight = parseInt(itemweight);
+					weight = itemweight/1000;
+				} else if (item.weight.includes("kg")){
+					itemweight = item.weight.slice(0, -3);
+					itemweight = parseInt(itemweight);
+					weight = itemweight*1000;
+				} else {
+					itemweight = item.weight.slice(0, -2);
+					itemweight = parseInt(itemweight);
+					weight = itemweight;
+				}
+			}
+		} else {
+			weight = getItemWeightInGrams(getItemFromItemList(item["copy-from"]))
+		}
+		return weight;
+	}
+	
+	//Returns the count of the item, for example if it is ammo
+	function getItemCount(item) {
+		var itemCount = 0;
+		if (item.count){
+			itemCount = item.count
+		} else if(item["copy-from"]){
+			itemCount = getItemCount(getItemFromItemList(item["copy-from"]))
+		}
+		return itemCount;
+	}
+	
+	
+	//Creates the results table from an item and recipes
+	function createRecipeResultsTable(recipeID) {
+		var recipe = getRecipeFromRecipeList(recipeID);
+		var htmlString = "";
+		var totalComponentWeight = getRecipePartsTotalWeightInGrams(recipe);
+		htmlString = "<table border='1'>";
+		htmlString += "<tr><td>Weight results for:</td><td><a href='https://github.com/CleverRaven/Cataclysm-DDA/search?q=" + recipeID + "+path%3Adata%2Fjson%2Frecipes+in%3Afile&unscoped_q=" + recipeID + "+path%3Adata%2Fjson%2Frecipes+in%3Afile'>" + recipeID + "</a></td><td></td><td></td><td></td></tr>";
+		htmlString += "<tr>";
+		htmlString += "<td>Components needed</td>";
+		htmlString += "<td>Component weight in g</td>";
+		htmlString += "<td>Component count</td>";
+		htmlString += "<td>Total weight</td>";
+		htmlString += "<td>Avg. weight</td>";
+		htmlString += "</tr>";
+		if(recipe.components){htmlString += createRecipeComponentsTable(recipe.components)};
+		if(recipe.using){htmlString += createRecipeRequirementsTable(recipe.using)};
+		htmlString += "<tr>";
+		htmlString += "<td></td>";
+		htmlString += "<td></td>";
+		htmlString += "<td></td>";
+		htmlString += "<td>Total weight</td>";
+		htmlString += "<td>"+totalComponentWeight+"</td>";
+		htmlString += "</tr>";
+		htmlString += "</table>";
+		updateRecipeResultsTable(htmlString);
+	}
+	
+	
+	
+	//Updates the list of recipes on the left
+	function updateRecipeList(){
+		document.getElementById("recipeList").innerHTML = "";
+		var totalComponentWeight;
+		var recipeResultWeight;
+		var resultItemCount = 0;
+		var item;
+		var diffWeight;
+		var htmlString = "";
+		
+		htmlString = "<p>click the column heads to sort. Note: Fake.json and Obsolete.json are excluded.</p>";
+		htmlString += "<table>";
+		htmlString += "<tr>"
+		htmlString += "<th>Recipe name</th>"
+		htmlString += "<th class='vertical'><div class='vertical'>Difference in grams</div></th>"
+		htmlString += "</tr>";
+		
+		for (var recipe of recipes) {
+			if (recipe.result) {
+				if (recipe.result == "hdframe") {
+				console.log("hdframe");
+				}
+				item = getItemFromItemList(recipe.result);
+				totalComponentWeight = getRecipePartsTotalWeightInGrams(recipe);
+				recipeResultWeight = getItemWeightInGrams(item);
+				resultItemCount = getItemCount(item);
+				if (resultItemCount > 0) {recipeResultWeight = recipeResultWeight*resultItemCount};
+				diffWeight = recipeResultWeight-totalComponentWeight
+					
+				htmlString += "<tr>";
+				if (diffWeight < -10 || diffWeight > 10){
+					htmlString += "<td>" + '<a style="color:red;" id="'+recipe.result+'" href="#" onClick="select_item(this)">' + recipe.result + '</span></td>';
+				} else {
+					htmlString += "<td>" + '<a id="'+recipe.result+'" href="#" onClick="select_item(this)">' + recipe.result + '</span></td>';
+				}
+				htmlString += "<td style='text-align: center;'><span title='This differs "+diffWeight+" grams from the components'>" + diffWeight + '</span></td>';
+				htmlString += "</tr>";
+			}
+		}
+		htmlString += "</table>";
+		$('#recipeList').append(htmlString);
+		tableSort();
+	} 
+	
+	//When an item from the list is clicked
+	function select_item(itemhref) {
+		var itemID = itemhref.id
+		updateItemDescriptionHTML(itemID);
+		createRecipeResultsTable(itemID);
+	}
+	
+	
+	//Returns the total weight of the components in grams
+	function getRequirementComponentsTotalWeightInGrams(requirement) {
 		var item;
 		var itemCount;
 		var level1;
@@ -110,8 +234,8 @@ footer {
 		var totalWeightInGrams = 0;
 		var altAvgWeight = 0;
 		var altCounter = 0;
-		if (recipe.components && recipe.type == "recipe"){
-			for (var level1 of recipe.components) {
+		if (requirement.components){
+			for (var level1 of requirement.components) {
 				if (Array.isArray(level1)) {
 					altCounter = 0;
 					altAvgWeight = 0;
@@ -136,32 +260,76 @@ footer {
 		return totalWeightInGrams;
 	}
 	
-	//Updates the results table
-	function updateItemDescriptionHTML(itemID) {
-		var item = getItemFromItemList(itemID);
-		htmlString = "<p>viewing results for:</p>";
-		htmlString += "<table border='1'>";
-		htmlString += "<tr><td>Item ID</td><td>"+item.id+"</td></tr>";
-		htmlString += "<tr><td>Item name</td><td>"+item.name+"</td></tr>";
-		htmlString += "<tr><td>Item type</td><td>"+item.type+"</td></tr>";
-		htmlString += "<tr><td>Item weight</td><td>"+getItemRawWeight(item)+"</td></tr>";
-		if(item.count){htmlString += "<tr><td>Item count</td><td>"+item.count+"</td></tr>"};
-		htmlString += "<tr><td>Item description</td><td>"+item.description+"</td></tr>";
-		htmlString += "</table><BR><BR>";
-		document.getElementById("itemDescription").innerHTML = htmlString;
+	
+	//Returns the total weight of the components in grams
+	function getUsingRequirementsTotalWeightInGrams(using) {
+		var requirement;
+		var requirementCount;
+		var level1;
+		var totalWeightInGrams = 0;
+		var altAvgWeight = 0;
+		var altCounter = 0;
+		if (using){
+			for (var level1 of using) {
+				if (Array.isArray(level1)) {
+					altCounter = 0;
+					altAvgWeight = 0;
+					altCounter+=1;
+					if (typeof level1[0] === 'string' || level1[0] instanceof String) {
+						// it's a string
+						requirement = getRequirementFromRequirementList(level1[0]);
+						requirementCount = level1[1];
+						altAvgWeight += getRequirementComponentsTotalWeightInGrams(requirement)*requirementCount
+					} else {
+						// it's something else
+						console.log("error in getUsingRequirementsTotalWeightInGrams");
+					}
+					totalWeightInGrams += altAvgWeight/altCounter;
+				}	else {
+					if (level1[0]) {
+						requirement = getRequirementFromRequirementList(level1[0]);
+						requirementCount = level1[1];
+						totalWeightInGrams += getRequirementComponentsTotalWeightInGrams(requirement)*requirementCount;
+					}
+				}
+			}
+		}
+		return totalWeightInGrams;
 	}
 	
-	//When an item from the list is clicked
-	function select_item(itemhref) {
-		var itemID = itemhref.id
-		updateItemDescriptionHTML(itemID);
-		createRecipeResultsTable(itemID);
-	}
 	
 	//Creates the results table from an item and recipes
-	function createRecipeResultsTable(recipeID) {
-		var recipe = getRecipeFromRecipeList(recipeID);
-		var htmlString;
+	function createRecipeRequirementsTable(using) {
+		var htmlString = "";
+		if (using){
+			for (var level1 of using) {
+				if (Array.isArray(level1)) {
+					for (var level2 of level1) {
+						if (typeof level2 === 'string' || level2 instanceof String) {
+							// it's a string
+							htmlString += createRequirementsComponentsTable(level2, level1[1]);
+						} else {
+							// it's something else
+							if (level2[0]) {
+								htmlString += createRequirementsComponentsTable(level2[0], level2[1]);
+							}
+						}
+					}
+				} else {
+					if (level1[0]) {
+						htmlString += createRequirementsComponentsTable(level2[0], level2[1]);
+					}
+				}
+			}
+		}
+		return htmlString;
+	}
+	
+	
+	//Creates the results table from an item and recipes
+	function createRequirementsComponentsTable(requirementID, requirementCount) {
+		var requirement = getRequirementFromRequirementList(requirementID);
+		var htmlString = "";
 		var altIDString;
 		var altRawWeightString;
 		var altCountString;
@@ -171,17 +339,73 @@ footer {
 		var totalweight = 0;
 		var itemID;
 		var itemCount
-		htmlString = "<table border='1'>";
-		htmlString += "<tr><td>Weight results for:</td><td>" + recipeID + "</td><td></td><td></td><td></td></tr>";
-		htmlString += "<tr>";
-		htmlString += "<td>Components needed</td>";
-		htmlString += "<td>Component weight in g</td>";
-		htmlString += "<td>Component count</td>";
-		htmlString += "<td>Total weight</td>";
-		htmlString += "<td>Avg. weight</td>";
-		htmlString += "</tr>";
-		if (recipe.components && recipe.type == "recipe"){
-			for (var level1 of recipe.components) {
+		if (requirement.components){
+			for (var level1 of requirement.components) {
+				if (Array.isArray(level1)) {
+					altIDString = "";
+					altRawWeightString = "";
+					altCountString = "";
+					altTotalWeightString = "";
+					altCounter = 0;
+					altAvgWeightString = 0;
+					htmlString += "<tr>";
+					for (var level2 of level1) {
+						if (level2[0]) {
+							altCounter += 1;
+							itemID = level2[0];
+							itemCount = level2[1];
+							item = getItemFromItemList(itemID);
+							altIDString += itemID + "<br>";
+							altRawWeightString += getItemRawWeight(item) + "<br>";
+							altCountString += itemCount + "*"+requirementCount+"<br>";
+							altTotalWeightString += getItemWeightInGrams(item)*itemCount*requirementCount + "<br>";
+							altAvgWeightString += getItemWeightInGrams(item)*itemCount
+						}
+					}
+					totalweight += altAvgWeightString/altCounter
+					htmlString += "<td>" + altIDString + "</td>";
+					htmlString += "<td>" + altRawWeightString + "</td>";
+					htmlString += "<td>" + altCountString + "</td>";
+					htmlString += "<td>" + altTotalWeightString + "</td>";
+					htmlString += "<td>" + totalweight*requirementCount + "</td>";
+					htmlString += "</tr>";
+				}	else {
+					if (level1[0]) {
+						itemID = level1[0];
+						itemCount = level1[1];
+						item = getItemFromItemList(itemID);
+						totalweight += getItemWeightInGrams(item)*itemCount
+						htmlString += "<tr>";
+						htmlString += "<td>" + item.id + "</td>";
+						htmlString += "<td>" + getItemRawWeight(item) + "</td>";
+						htmlString += "<td>" + itemCount + "</td>";
+						htmlString += "<td>" + getItemWeightInGrams(item)*itemCount + "</td>";
+						htmlString += "<td>" + altTotalWeightString + "</td>";
+						htmlString += "</tr>";
+					}
+				}
+			}
+		}
+		return htmlString;
+	}
+	
+	
+	
+	
+	//Creates the results table from an item and recipes
+	function createRecipeComponentsTable(components) {
+		var htmlString = "";
+		var altIDString;
+		var altRawWeightString;
+		var altCountString;
+		var altTotalWeightString;
+		var altAvgWeightString;
+		var altCounter;
+		var totalweight = 0;
+		var itemID;
+		var itemCount
+		if (components){
+			for (var level1 of components) {
 				if (Array.isArray(level1)) {
 					altIDString = "";
 					altRawWeightString = "";
@@ -227,17 +451,98 @@ footer {
 				}
 			}
 		}
-		
-		htmlString += "<tr>";
-		htmlString += "<td></td>";
-		htmlString += "<td></td>";
-		htmlString += "<td></td>";
-		htmlString += "<td>Total weight</td>";
-		htmlString += "<td>"+totalweight+"</td>";
-		htmlString += "</tr>";
-		htmlString += "</table>";
-		updateRecipeResultsTable(htmlString);
+		return htmlString;
 	}
+	
+	
+	
+	//Gets requirement json object from the requirement list
+	function getRequirementFromRequirementList(requirementID){
+		for (var requirement of requirements) {
+			if (requirementID == requirement.id) {
+				return requirement;
+			}
+		}
+		return false;
+	}
+	
+	
+	//Returns the total weight of the components in grams
+	function getRecipePartsTotalWeightInGrams(recipe) {
+		var totalWeightInGrams = 0;
+		if (recipe.components && recipe.type == "recipe"){
+			totalWeightInGrams += getComponentsTotalWeightInGrams(recipe.components);
+		}
+		if (recipe.using && recipe.type == "recipe"){
+			totalWeightInGrams += getUsingRequirementsTotalWeightInGrams(recipe.using);
+		}
+		return totalWeightInGrams;
+	}
+	
+	
+	//Returns the total weight of the components in grams
+	function getComponentsTotalWeightInGrams(components) {
+		var item;
+		var itemCount;
+		var level1;
+		var level2;
+		var totalWeightInGrams = 0;
+		var altAvgWeight = 0;
+		var altCounter = 0;
+		if (components){
+			for (var level1 of components) {
+				if (Array.isArray(level1)) {
+					altCounter = 0;
+					altAvgWeight = 0;
+					for (var level2 of level1) {
+						if (level2[0]) {
+							altCounter+=1;
+							item = getItemFromItemList(level2[0]);
+							itemCount = level2[1];
+							altAvgWeight += getItemWeightInGrams(item)*itemCount
+						}
+					}
+					totalWeightInGrams += altAvgWeight/altCounter;
+				}	else {
+					if (level1[0]) {
+						item = getItemFromItemList(level1[0]);
+						itemCount = level1[1];
+						totalWeightInGrams += getItemWeightInGrams(item)*itemCount;
+					}
+				}
+			}
+		}
+		return totalWeightInGrams;
+	}
+	
+	
+	
+	
+	//Updates the results table
+	function updateItemDescriptionHTML(itemID) {
+		var item = getItemFromItemList(itemID);
+		var itemCount = getItemCount(item);
+		htmlString = "<p>viewing results for:</p>";
+		htmlString += "<table border='1'>";
+		htmlString += "<tr><td>Item ID</td><td><a href='https://github.com/CleverRaven/Cataclysm-DDA/search?q="+item.id+"+path%3Adata%2Fjson%2Fitems+in%3Afile&unscoped_q="+item.id+"+path%3Adata%2Fjson%2Fitems+in%3Afile'>"+item.id+"</a></td></tr>";
+		htmlString += "<tr><td>Item name</td><td>"+item.name+"</td></tr>";
+		htmlString += "<tr><td>Item type</td><td>"+item.type+"</td></tr>";
+		htmlString += "<tr><td>Item weight</td><td>"+getItemRawWeight(item)+"</td></tr>";
+		if(itemCount > 0){
+			htmlString += "<tr><td>Item count</td><td>"+itemCount+"</td></tr>";
+			htmlString += "<tr><td>Total weight</td><td>"+getItemWeightInGrams(item)*itemCount+"</td></tr>";
+		}
+		htmlString += "<tr><td>Item description</td><td>"+item.description+"</td></tr>";
+		htmlString += "</table><BR><BR>";
+		document.getElementById("itemDescription").innerHTML = htmlString;
+		
+		
+				recipeResultWeight = getItemWeightInGrams(item);
+				resultItemCount = getItemCount(item);
+	}
+	
+	
+	
 	
 	//Gets item json object from the item list
 	function getItemFromItemList(itemID){
@@ -263,36 +568,6 @@ footer {
 		return Number(n) === n && n % 1 !== 0;
 	}
 	
-	//Returns the total weight of the components in grams
-	function getItemWeightInGrams(item) {
-		var weight = 0;
-		var itemweight;
-		var totalWeightInGrams = 0;
-		if (item.weight){
-			if(Number.isInteger(item.weight)){
-				weight = item.weight;
-			} else if(isFloat(item.weight)){
-				weight = item.weight;
-			} else {
-				if (item.weight.includes("mg")){
-					itemweight = item.weight.slice(0, -3);
-					itemweight = parseInt(itemweight);
-					weight = itemweight/1000;
-				} else if (item.weight.includes("kg")){
-					itemweight = item.weight.slice(0, -3);
-					itemweight = parseInt(itemweight);
-					weight = itemweight*1000;
-				} else {
-					itemweight = item.weight.slice(0, -2);
-					itemweight = parseInt(itemweight);
-					weight = itemweight;
-				}
-			}
-		} else {
-			weight = getItemWeightInGrams(getItemFromItemList(item["copy-from"]))
-		}
-		return weight;
-	}
 	
 	//Returns the weight of the item in grams
 	function getItemRawWeight(item) {
@@ -306,41 +581,6 @@ footer {
 	}
 	
 	
-	//Updates the list of recipes on the left
-	function updateRecipeList(){
-		document.getElementById("recipeList").innerHTML = "";
-		var totalComponentWeight;
-		var recipeResultWeight;
-		var diffWeight;
-		var htmlString;
-		
-		htmlString = "<p>click the column heads to sort. Note: Fake.json and Obsolete.json are excluded.</p>";
-		htmlString += "<table>";
-		htmlString += "<tr>"
-		htmlString += "<th>Recipe name</th>"
-		htmlString += "<th class='vertical'><div class='vertical'>Difference in grams</div></th>"
-		htmlString += "</tr>";
-		
-		for (var recipe of recipes) {
-			if (recipe.result) {
-				totalComponentWeight = getComponentsTotalWeightInGrams(recipe);
-				recipeResultWeight = getItemWeightInGrams(getItemFromItemList(recipe.result));
-				diffWeight = recipeResultWeight-totalComponentWeight
-					
-				htmlString += "<tr>";
-				if (diffWeight < -10 || diffWeight > 10){
-					htmlString += "<td>" + '<a style="color:red;" id="'+recipe.result+'" href="#" onClick="select_item(this)">' + recipe.result + '</span></td>';
-				} else {
-					htmlString += "<td>" + '<a id="'+recipe.result+'" href="#" onClick="select_item(this)">' + recipe.result + '</span></td>';
-				}
-				htmlString += "<td style='text-align: center;'><span title='This differs "+diffWeight+" grams from the components'>" + diffWeight + '</span></td>';
-				htmlString += "</tr>";
-			}
-		}
-		htmlString += "</table>";
-		$('#recipeList').append(htmlString);
-		tableSort();
-	} 
 	
 	//Returns if the item is a component in the recipe.
 	function isItemInRecipe(itemID, recipe) {
@@ -371,8 +611,6 @@ footer {
 		updateRecipeList()
 	} 
 	
-	
-	
 	//Gets the recipes the item is in
 	function getItemFromRecipes(itemID) {
 		var recipeList = [];
@@ -385,9 +623,6 @@ footer {
 		}
 		return recipeList;
 	}
-	
-	
-	
 	
 	//Gets the recipes the item is in
 	function getItemInRecipes(itemID) {
@@ -405,287 +640,12 @@ footer {
 	}
 	
 	
-	
-	//Creates the results table from an item and itemgroups
-	function createItemgroupResultsTable(itemGroupList) {
-		var htmlString;
-		var counter = 0;
-		if (itemGroupList.length > 0){
-			htmlString = "<table border='1'>";
-			htmlString += "<tr><td>Itemgroup name</td></tr>";
-			var itemEntry;
-			for (var itemgroup of itemGroupList) {
-				counter = 0;
-				htmlString += "<tr>";
-				htmlString += "<td>" 
-				for (var it of itemgroup) {
-					if (counter == 0) {
-						htmlString += "<b>" + it[0] + "</b> -> "
-					} else if (counter < itemgroup.length-1){
-						htmlString += it[0] + "(" + it[1] + ") -> "
-					} else {
-						htmlString += it[0] + "(" + it[1] + ")"
-					}
-					counter = counter + 1;
-				}
-				htmlString += "</td>" 
-				htmlString += "</tr>";
-			}
-			htmlString += "</table>";
-		} else {
-			htmlString = "<div>No itemgroup results</div>";
-		}
-		updateItemgroupResultsTable(htmlString);
-	}
-	
-	//Returns that item list entry from the item group.
-	function getItemEntryFromItemGroup(itemID, itemgroup) {
-		var itemgroupList = []
-		if (itemgroup.items && itemgroup.type == "item_group"){
-			for (var itemInGroup of itemgroup.items) {
-				if (itemID == "case_violin" && itemgroup.id == "musicstore_showpiece") {
-					console.log("itemInGroup.collection: " + itemInGroup.collection);
-				}
-				if (itemInGroup[0] == itemID) {
-					return [[itemID, itemInGroup[1]]];
-				}
-				if (itemInGroup.item == itemID) {
-					return [[itemID, itemInGroup.prob]];
-				}
-				if (itemInGroup.distribution){
-					if (Array.isArray(itemInGroup.distribution)) {
-						for (var entryInDistribution of itemInGroup.distribution) {
-							if (entryInDistribution.collection){
-								if (Array.isArray(entryInDistribution.collection)) {
-									for (var entryInCollection of entryInDistribution.collection) {
-										if (entryInCollection.item == itemID) {
-											return [[itemID, entryInDistribution.prob]];
-										}
-									}
-								}
-							}
-							if (entryInDistribution.item == itemID) {
-								return [[itemID, entryInDistribution.prob]];
-							}
-						}
-					}
-				}
-				if (itemInGroup.group) {
-		     		itemEntry = getItemEntryFromItemGroup(itemID, getItemgroupFromID(itemInGroup.group)); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
-					if (itemEntry) {
-						itemgroupList = [[itemInGroup.group, itemInGroup.prob]];
-						for (var entryListItem of itemEntry) {
-							itemgroupList.push(entryListItem);
-						}
-						return itemgroupList;
-					}
-				}
-			}
-		}
-		if (itemgroup.entries && itemgroup.type == "item_group"){
-			for (var entryInGroup of itemgroup.entries) {
-				if (entryInGroup.item == itemID) {
-					return [[itemID, entryInGroup.prob]];
-				}
-				if (entryInGroup.group) {
-					itemEntry = getItemEntryFromItemGroup(itemID, getItemgroupFromID(entryInGroup.group)); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
-					if (itemEntry) {
-						itemgroupList = [[entryInGroup.group, entryInGroup.prob]];
-						for (var entryListItem of itemEntry) {
-							itemgroupList.push(entryListItem);
-						}
-						return itemgroupList;
-					}
-				}
-			}
-		}
-		return false;
-	}
-	
-	//Gets the item groups the item is in
-	function getItemItemgroups(itemID) {
-		var itemEntry;
-		var groupEntry;
-		var itemGroupList = [];
-		//Loop every itemgroup
-		for (var itemgroup of itemgroups) {
-			if (itemgroup.id) {
-			  itemEntry = getItemEntryFromItemGroup(itemID, itemgroup); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
-			  if (itemEntry) {
-					//An item entry has been returned. The item entry can be a single item and probability, or a list of itemgroups and probabilities.
-					//For example [forest, 10, evereryday_corpse, 5, watch, 5]
-					//Add this list to the top-level itemgroup by appending to groupentry below.
-					groupEntry = [[itemgroup.id, 0]];
-					for (var entryListItem of itemEntry) {
-						groupEntry.push(entryListItem);
-					}
-					itemGroupList.push(groupEntry); 
-				}
-			}
-		}
-		return itemGroupList;
-	}
-	
-	//Checks if an itemgroup is already in an item itemgroup list
-	function isInItemItemgroupList(itemgroupID, itemGroupList) {
-		//Loop every itemgroup
-		for (var itemgroup of itemGroupList) {
-			if (itemgroup[0] == itemgroupID) {
-				return true;
-			}
-		}
-		return itemGroupList;
-	}
-	
-	//Gets the item groups from an itemgroupid
-	function getItemgroupFromID(itemGroupID) {
-										
-		//Loop every itemgroup
-		for (var itemgroup of itemgroups) {
-			if (itemgroup.id) {
-				if (itemgroup.id == itemGroupID) {
-					return itemgroup;
-				}
-			}
-		}
-		return false;
-	}
-	
-	
-	//Gets the mapgen the item is in
-	function getItemMapgen(itemID) {
-		var itemEntry;
-		var itemKey;
-		var mapgenEntry;
-		var mapgenObject;
-		var itemMapgenList = [];
-		//Loop every itemgroup
-		for (var mapgn of mapgen) {
-			if (mapgn.object) {
-				mapgenObject = mapgn.object
-				if (mapgenObject.place_items) {
-					for (var place_it of mapgenObject.place_items) {
-						if (place_it.item) {
-							itemEntry = getItemEntryFromItemGroup(itemID, place_it.item); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
-							if (itemEntry) {
-								mapgenEntry = getMapgenName(mapgenObject)
-								itemMapgenList.push(mapgenEntry); 
-							}
-						}
-					}
-				}
-				if (mapgenObject.items) {
-					if (Array.isArray(mapgenObject.items)) {
-						for (var it of mapgenObject.items) {
-							for (var i of it) {
-								if (i.item) {
-									itemEntry = getItemEntryFromItemGroup(itemID, i.item); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
-									if (itemEntry) {
-										mapgenEntry = getMapgenName(mapgenObject)
-										itemMapgenList.push(mapgenEntry); 
-									}
-								}
-							}
-						}
-					} else {
-						for(key in mapgenObject.items) {
-							itemKey = mapgenObject.items[key];
-							if (Array.isArray(itemKey)) {
-								for (var it of itemKey) {
-									if (it.item) {
-										itemEntry = getItemEntryFromItemGroup(itemID, it.item); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
-										if (itemEntry) {
-											mapgenEntry = getMapgenName(mapgenObject)
-											itemMapgenList.push(mapgenEntry); 
-										}
-									}
-								}
-							} else {
-								if (itemKey.item) {
-									//Get the itemgroup object from the itemgroup name
-									//Check if the itemID is in the specified itemgroup
-									itemEntry = getItemEntryFromItemGroup(itemID, getItemgroupFromID(itemKey.item)); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
-									if (itemEntry) {
-										mapgenEntry = getMapgenName(mapgn)
-										itemMapgenList.push(mapgenEntry); 
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		return itemMapgenList;
-	}	
-	
-	
-	
-	//Creates the results table from an item and mapgen
-	function createMapgenResultsTable(itemMapgenList) {
-		var htmlString;
-		if (itemMapgenList.length > 0){
-			htmlString = "<table border='1' style='word-break: break-word;'>";
-			htmlString += "<tr><td>Mapgen name</td></tr>";
-			for (var mapgen of itemMapgenList) {
-				htmlString += "<tr>";
-				htmlString += "<td>" + mapgen + "</td>";
-				htmlString += "</tr>";
-			}
-			htmlString += "</table>";
-		} else {
-			htmlString = "<div>No mapgen results</div>";
-		}
-		updateMapgenResultsTable(htmlString);
-	}
-	
-	//Updates the mapgen results table
-	function updateMapgenResultsTable(htmlString) {
-		document.getElementById("mapgenResults").innerHTML = htmlString;
-	}
-	
-	//Gets the name if the mapgen
-	function getMapgenName(mapgen) {
-		var mapgenName = "";
-		if (mapgen.om_terrain) {
-			mapgenName = mapgen.om_terrain;
-		} else if (mapgen.nested_mapgen_id){
-			mapgenName = mapgen.nested_mapgen_id;
-		}
-		return mapgenName;
-	}
-	
-	
-	
-	
-	//Updates the results table
-	function updateItemgroupResultsTable(htmlString) {
-		document.getElementById("itemGroupResults").innerHTML = htmlString;
-	}
-	
-	//Updates the results table
-	function updateInRecipeResultsTable(htmlString) {
-		document.getElementById("inRecipeResults").innerHTML = htmlString;
-	}
-	
 	//Updates the results table
 	function updateRecipeResultsTable(htmlString) {
 		document.getElementById("recipeResults").innerHTML = htmlString;
 	}
 	
 	
-	
-	
-	
-	//Updates the list of items on the left
-	function fillItemTypeList(){
-		document.getElementById("itemList").innerHTML = "";
-		for (var item of items) {
-			if (item.name && item.id) {
-				addItemTypeToList(item.type); //Adds an item type to the item type selection box list
-			}
-		}
-	}
 	
 	//Enables table sort
 	function tableSort(){
@@ -702,33 +662,6 @@ footer {
 				.forEach(tr => table.appendChild(tr) );
 		})));
 	} 
-	
-	
-		
-	//Adds an item type if it does not already exists in the item type selection box list
-	function addItemTypeToList(type){
-		for (i = 0; i < document.getElementById("itemType").length; ++i){
-			if (document.getElementById("itemType").options[i].value == type){
-			  return
-			}
-		}
-		var x = document.getElementById("itemType");
-		var option = document.createElement("option");
-		option.text = type;
-		option.value = type;
-		x.add(option); 
-	} 
-	
-	//When the item type select box is changed
-	function itemType_change(){
-		//updateItemList()
-	} 
-	
-	//Gets the value of the item type select element
-	function get_itemType_value(){
-		return document.getElementById("itemType").value;
-	} 
-	
 
   </script>
 </head>
