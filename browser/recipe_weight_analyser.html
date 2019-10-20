@@ -104,17 +104,19 @@ footer {
 	
 	//Returns the count of the item, for example if it is ammo
 	function getItemCount(item) {
-		if (item.count){
-			if (item.type){
-				if (item.type == "MAGAZINE"){
-					return 0;
+		if(item){
+			if (item.count){
+				if (item.type){
+					if (item.type == "MAGAZINE"){
+						return 0;
+					}
 				}
-			}
-			return item.count
-		} else if(item["copy-from"]){
-			var itemCopy = getItemFromItemList(item["copy-from"]);
-			if(item){
-				return getItemCount();
+				return item.count
+			} else if(item["copy-from"]){
+				var itemCopy = getItemFromItemList(item["copy-from"]);
+				if(item){
+					return getItemCount();
+				}
 			}
 		}
 		return 0;
@@ -272,12 +274,14 @@ footer {
 		
 	//Returns the weight of the item in grams
 	function getItemRawWeight(item) {
-		if (item.weight){
-				return item.weight;
-		} else {
-			var itemCopy = getItemFromItemList(item["copy-from"]);
-			if(itemCopy){
-				return getItemRawWeight();
+		if(item){
+			if (item.weight){
+					return item.weight;
+			} else {
+				var itemCopy = getItemFromItemList(item["copy-from"]);
+				if(itemCopy){
+					return getItemRawWeight();
+				}
 			}
 		}
 		return 0;
