@@ -102,6 +102,109 @@ footer {
 	});
 	
 	
+	//Creates the results table from an item and recipes
+	function createRecipeComponentRow(components, isRequirement) {
+		var htmlString = "";
+		var htmlRequirementString = "";
+		var altIDString;
+		var altRawWeightString;
+		var altCountString;
+		var altTotalWeightString;
+		var altAvgWeight;
+		var altCounter;
+		var totalweight = 0;
+		var itemID;
+		var itemCount
+		var item
+		if (components){
+			for (var level1 of components) {
+				// it's something else
+				altIDString = "";
+				altRawWeightString = "";
+				altCountString = "";
+				altTotalWeightString = "";
+				altCounter = 0;
+				altAvgWeight = 0;
+				htmlRequirementString = "";
+				if(!isRequirement){htmlString += "<tr>"};
+				for (var level2 of level1) {
+					altCounter += 1;
+					if (level2[2]) {
+						//This has the 'list' tag, it's a requirement
+						var requirement = getRequirementFromRequirementList(level2[0]);
+						htmlRequirementString += createRecipeComponentRow(requirement.components, true);
+					} else if (level2[0]){
+						itemID = level2[0];
+						item = getItemFromItemList(itemID);
+						if(item){
+							itemCount = level2[1];
+							altIDString += itemID + "<br>";
+							altRawWeightString += getItemRawWeight(item) + "<br>";
+							altCountString += itemCount + "<br>";
+							altTotalWeightString += getItemWeightInGrams(item)*itemCount + "<br>";
+							altAvgWeight += getItemWeightInGrams(item)*itemCount;
+							totalweight += altAvgWeight/altCounter
+						}
+					}
+				}
+				if(htmlRequirementString == "" || isRequirement){
+					htmlString += "<td>" + altIDString + "</td>";
+					htmlString += "<td>" + altRawWeightString + "</td>";
+					htmlString += "<td>" + altCountString + "</td>";
+					htmlString += "<td>" + altTotalWeightString + "</td>";
+					htmlString += "<td>" + Math.floor(altAvgWeight/altCounter) + "</td>";
+				} else {
+					htmlString += htmlRequirementString;
+				}
+				if(!isRequirement){
+					htmlString += "</tr>";
+				}
+			}
+		}
+		return htmlString;
+	}
+	
+	
+	
+	
+	//Creates the results table from an item and recipes
+	function createRecipeResultsTable(recipeNumber) {
+		var recipe = getRecipeFromRecipeListByNumber(recipeNumber);
+		var recipeID = recipe.result;
+		var htmlString = "";
+		var totalComponentWeight = getRecipePartsTotalWeightInGrams(recipe);
+		var item = getItemFromItemList(recipeID);
+		var recipeResultWeight = getItemWeightInGrams(item);
+		var resultItemCount = getItemCount(item);
+		var itemCharges = getItemCharges(item);
+		if (resultItemCount > 0) {recipeResultWeight = recipeResultWeight*resultItemCount};
+		if (itemCharges > 0) {recipeResultWeight = recipeResultWeight*itemCharges};
+		var diffWeight = recipeResultWeight-totalComponentWeight
+		
+		if(recipeID == "icecream"){
+		 console.log("salt")
+		}
+		htmlString = "<table border='1'>";
+		htmlString += "<tr><td>Weight results for:</td><td><a href='https://github.com/CleverRaven/Cataclysm-DDA/search?q=" + recipeID + "+path%3Adata%2Fjson%2Frecipes+in%3Afile&unscoped_q=" + recipeID + "+path%3Adata%2Fjson%2Frecipes+in%3Afile'>" + recipeID + "</a></td><td></td><td></td><td></td></tr>";
+		htmlString += "<tr>";
+		htmlString += "<td>Components needed</td>";
+		htmlString += "<td>Component weight in g</td>";
+		htmlString += "<td>Component count</td>";
+		htmlString += "<td>Total weight</td>";
+		htmlString += "<td>Avg. weight</td>";
+		htmlString += "</tr>";
+		if(recipe.components){htmlString += createRecipeComponentRow(recipe.components, false)};
+		if(recipe.using){htmlString += createRecipeRequirementsTable(recipe.using)};
+		htmlString += "<tr><td></td><td></td><td></td><td>Total weight</td><td>"+totalComponentWeight+"</td></tr>";
+		htmlString += "<tr><td></td><td></td><td></td><td>Weight difference</td><td>"+diffWeight+"</td></tr>";
+		htmlString += "</table>";
+		updateRecipeResultsTable(htmlString);
+	}
+	
+	
+	
+	
+	
 	//Returns the count of the item, for example if it is ammo
 	function getItemCount(item) {
 		if(item){
@@ -280,7 +383,7 @@ footer {
 			} else {
 				var itemCopy = getItemFromItemList(item["copy-from"]);
 				if(itemCopy){
-					return getItemRawWeight();
+					return getItemRawWeight(itemCopy);
 				}
 			}
 		}
@@ -288,56 +391,6 @@ footer {
 	}
 	
 	
-	
-	//Creates the results table from an item and recipes
-	function createRecipeComponentsTable(components) {
-		var htmlString = "";
-		var altIDString;
-		var altRawWeightString;
-		var altCountString;
-		var altTotalWeightString;
-		var altAvgWeightString;
-		var altCounter;
-		var totalweight = 0;
-		var itemID;
-		var itemCount
-		var item
-		if (components){
-			for (var level1 of components) {
-				// it's something else
-				altIDString = "";
-				altRawWeightString = "";
-				altCountString = "";
-				altTotalWeightString = "";
-				altCounter = 0;
-				altAvgWeightString = 0;
-				htmlString += "<tr>";
-				for (var level2 of level1) {
-					if (level2[0]) {
-						altCounter += 1;
-						itemID = level2[0];
-						itemCount = level2[1];
-						item = getItemFromItemList(itemID);
-						if(item){
-							altIDString += itemID + "<br>";
-							altRawWeightString += getItemRawWeight(item) + "<br>";
-							altCountString += itemCount + "<br>";
-							altTotalWeightString += getItemWeightInGrams(item)*itemCount + "<br>";
-							altAvgWeightString += getItemWeightInGrams(item)*itemCount;
-						}
-					}
-				}
-				totalweight += altAvgWeightString/altCounter
-				htmlString += "<td>" + altIDString + "</td>";
-				htmlString += "<td>" + altRawWeightString + "</td>";
-				htmlString += "<td>" + altCountString + "</td>";
-				htmlString += "<td>" + altTotalWeightString + "</td>";
-				htmlString += "<td>" + Math.floor(altAvgWeightString/altCounter) + "</td>";
-				htmlString += "</tr>";
-			}
-		}
-		return htmlString;
-	}
 	
 	
 	//Updates the results table
@@ -380,40 +433,6 @@ footer {
 		return itemCharges;
 	}
 	
-	
-	//Creates the results table from an item and recipes
-	function createRecipeResultsTable(recipeNumber) {
-		var recipe = getRecipeFromRecipeListByNumber(recipeNumber);
-		var recipeID = recipe.result;
-		var htmlString = "";
-		var totalComponentWeight = getRecipePartsTotalWeightInGrams(recipe);
-		var item = getItemFromItemList(recipeID);
-		var recipeResultWeight = getItemWeightInGrams(item);
-		var resultItemCount = getItemCount(item);
-		var itemCharges = getItemCharges(item);
-		if (resultItemCount > 0) {recipeResultWeight = recipeResultWeight*resultItemCount};
-		if (itemCharges > 0) {recipeResultWeight = recipeResultWeight*itemCharges};
-		var diffWeight = recipeResultWeight-totalComponentWeight
-		
-		if(recipeID == "icecream"){
-		 console.log("salt")
-		}
-		htmlString = "<table border='1'>";
-		htmlString += "<tr><td>Weight results for:</td><td><a href='https://github.com/CleverRaven/Cataclysm-DDA/search?q=" + recipeID + "+path%3Adata%2Fjson%2Frecipes+in%3Afile&unscoped_q=" + recipeID + "+path%3Adata%2Fjson%2Frecipes+in%3Afile'>" + recipeID + "</a></td><td></td><td></td><td></td></tr>";
-		htmlString += "<tr>";
-		htmlString += "<td>Components needed</td>";
-		htmlString += "<td>Component weight in g</td>";
-		htmlString += "<td>Component count</td>";
-		htmlString += "<td>Total weight</td>";
-		htmlString += "<td>Avg. weight</td>";
-		htmlString += "</tr>";
-		if(recipe.components){htmlString += createRecipeComponentsTable(recipe.components)};
-		if(recipe.using){htmlString += createRecipeRequirementsTable(recipe.using)};
-		htmlString += "<tr><td></td><td></td><td></td><td>Total weight</td><td>"+totalComponentWeight+"</td></tr>";
-		htmlString += "<tr><td></td><td></td><td></td><td>Weight difference</td><td>"+diffWeight+"</td></tr>";
-		htmlString += "</table>";
-		updateRecipeResultsTable(htmlString);
-	}
 	
 	
 	
@@ -491,8 +510,8 @@ footer {
 					}
 					htmlString += "<td style='text-align: center;'><span title='This differs "+diffWeight+" grams from the components'>" + diffWeight + '</span></td>';
 					htmlString += "</tr>";
-					counter +=1;
 				}
+				counter +=1;
 			}
 		}
 		htmlString += "</table>";
@@ -767,7 +786,7 @@ footer {
 <div class="box">
   <header>
   <h2>Recipe weight analyser</h2>
-  <p>Used to make a list of recipes that has a differen weight then its components.</p>
+  <p>Used to make a list of recipes that has a different weight then its components.</p>
 </header>
   <div class="row content">
   	<table border="1" width="100%" height="100%">
