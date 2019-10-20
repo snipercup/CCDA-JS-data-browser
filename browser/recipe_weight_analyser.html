@@ -104,6 +104,7 @@ footer {
 	
 	//Returns the count of the item, for example if it is ammo
 	function getItemCount(item) {
+		var itemCopy
 		if (item.count){
 			if (item.type){
 				if (item.type == "MAGAZINE"){
@@ -112,7 +113,12 @@ footer {
 			}
 			return item.count
 		} else if(item["copy-from"]){
-			return getItemCount(getItemFromItemList(item["copy-from"]))
+			itemCopy = getItemFromItemList(item["copy-from"])
+			if(itemCopy){
+				return getItemCount(itemCopy)
+			} else {
+				return 0;
+			}
 		}
 		return 0;
 	}
@@ -182,16 +188,20 @@ footer {
 							altAvgWeight += getRequirementComponentsTotalWeightInGrams(requirement)*requirementCount;
 						} else {
 							item = getItemFromItemList(level2[0]);
-							itemCount = level2[1];
-							altAvgWeight += getItemWeightInGrams(item)*itemCount
+							if(item){
+								itemCount = level2[1];
+								altAvgWeight += getItemWeightInGrams(item)*itemCount;
+							}
 						}
 					}
 					totalWeightInGrams += Math.floor(altAvgWeight/altCounter);
 				}	else {
 					if (level1[0]) {
 						item = getItemFromItemList(level1[0]);
-						itemCount = level1[1];
-						totalWeightInGrams += getItemWeightInGrams(item)*itemCount;
+						if(item){
+							itemCount = level1[1];
+							totalWeightInGrams += getItemWeightInGrams(item)*itemCount;
+						}
 					}
 				}
 			}
@@ -227,16 +237,20 @@ footer {
 							altAvgWeight += getRequirementComponentsTotalWeightInGrams(requirement)*requirementCount;
 						} else {
 							item = getItemFromItemList(level2[0]);
-							itemCount = level2[1];
-							altAvgWeight += getItemWeightInGrams(item)*itemCount
+							if(item){
+								itemCount = level2[1];
+								altAvgWeight += getItemWeightInGrams(item)*itemCount;
+							}
 						}
 					}
 					totalWeightInGrams += Math.floor(altAvgWeight/altCounter);
 				}	else {
 					if (level1[0]) {
 						item = getItemFromItemList(level1[0]);
-						itemCount = level1[1];
-						totalWeightInGrams += getItemWeightInGrams(item)*itemCount;
+						if(item){
+							itemCount = level1[1];
+							totalWeightInGrams += getItemWeightInGrams(item)*itemCount;
+						}
 					}
 				}
 			}
@@ -262,13 +276,17 @@ footer {
 		
 	//Returns the weight of the item in grams
 	function getItemRawWeight(item) {
-		var weight = 0;
 		if (item.weight){
-				weight = item.weight;
+				return item.weight;
 		} else {
-			weight = getItemRawWeight(getItemFromItemList(item["copy-from"]))
+			var itemCopy = getItemFromItemList(item["copy-from"]);
+			if(itemCopy){
+				return getItemRawWeight(itemCopy);
+			} else {
+				return 0;
+			}
 		}
-		return weight;
+		return 0;
 	}
 	
 	
@@ -482,9 +500,6 @@ footer {
 		tableSort();
 	} 
 	
-	
-	
-	
 	//Returns the total weight of the components in grams
 	function getUsingRequirementsTotalWeightInGrams(using) {
 		var requirement;
@@ -579,11 +594,13 @@ footer {
 							itemID = level2[0];
 							itemCount = level2[1];
 							item = getItemFromItemList(itemID);
-							altIDString += itemID + "<br>";
-							altRawWeightString += getItemRawWeight(item) + "<br>";
-							altCountString += itemCount + "*"+requirementCount+"<br>";
-							altTotalWeightString += getItemWeightInGrams(item)*itemCount*requirementCount + "<br>";
-							altAvgWeightString += getItemWeightInGrams(item)*itemCount
+							if(item){
+								altIDString += itemID + "<br>";
+								altRawWeightString += getItemRawWeight(item) + "<br>";
+								altCountString += itemCount + "*"+requirementCount+"<br>";
+								altTotalWeightString += getItemWeightInGrams(item)*itemCount*requirementCount + "<br>";
+								altAvgWeightString += getItemWeightInGrams(item)*itemCount
+							}
 						}
 					}
 					totalweight += altAvgWeightString/altCounter
@@ -598,14 +615,16 @@ footer {
 						itemID = level1[0];
 						itemCount = level1[1];
 						item = getItemFromItemList(itemID);
-						totalweight += getItemWeightInGrams(item)*itemCount
-						htmlString += "<tr>";
-						htmlString += "<td>" + item.id + "</td>";
-						htmlString += "<td>" + getItemRawWeight(item) + "</td>";
-						htmlString += "<td>" + itemCount + "</td>";
-						htmlString += "<td>" + getItemWeightInGrams(item)*itemCount + "</td>";
-						htmlString += "<td>" + altTotalWeightString + "</td>";
-						htmlString += "</tr>";
+						if(item){
+							totalweight += getItemWeightInGrams(item)*itemCount
+							htmlString += "<tr>";
+							htmlString += "<td>" + item.id + "</td>";
+							htmlString += "<td>" + getItemRawWeight(item) + "</td>";
+							htmlString += "<td>" + itemCount + "</td>";
+							htmlString += "<td>" + getItemWeightInGrams(item)*itemCount + "</td>";
+							htmlString += "<td>" + altTotalWeightString + "</td>";
+							htmlString += "</tr>";
+						}
 					}
 				}
 			}
