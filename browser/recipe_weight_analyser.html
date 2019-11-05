@@ -102,6 +102,137 @@ footer {
 	});
 	
 	
+	//Returns the total weight of the components in grams
+	function getItemWeightInGrams(item) {
+		var weight = 0;
+		var itemweight;
+		var totalWeightInGrams = 0;
+		if (item.weight){
+			if(Number.isInteger(item.weight)){
+				weight = item.weight;
+			} else if(isFloat(item.weight)){
+				weight = item.weight;
+			} else {
+				if (item.weight.includes("mg")){
+					itemweight = item.weight.slice(0, -3);
+					itemweight = parseInt(itemweight);
+					weight = itemweight/1000;
+				} else if (item.weight.includes("kg")){
+					itemweight = item.weight.slice(0, -3);
+					itemweight = parseInt(itemweight);
+					weight = itemweight*1000;
+				} else {
+					itemweight = item.weight.slice(0, -2);
+					itemweight = parseInt(itemweight);
+					weight = itemweight;
+				}
+			}
+		} else {
+			var itemCopy = getItemFromItemList(item["copy-from"]);
+			if(itemCopy){
+				weight = getItemWeightInGrams(itemCopy);
+				if (item.proportional){
+					if (item.proportional.weight){
+						var proportionalWeight = item.proportional.weight;
+						//weight = Math.floor(weight*proportionalWeight);
+						weight = weight*proportionalWeight;
+					}
+				}
+			} else {
+				//console.log("error - item[copy-from] = " + item["copy-from"])
+				weight = 0;
+			}
+		}
+		return weight;
+	}
+	
+	
+	
+	//Returns the total weight of the components in grams
+	function getRequirementComponentsTotalWeightInGrams(requirement) {
+		var item;
+		var itemCount;
+		var level1;
+		var level2;
+		var totalWeightInGrams = 0;
+		var altAvgWeight = 0;
+		var altCounter = 0;
+		if (requirement.components){
+			for (var level1 of requirement.components) {
+				if (Array.isArray(level1)) {
+					altCounter = 0;
+					altAvgWeight = 0;
+					for (var level2 of level1) {
+						altCounter+=1;
+						if (level2[2]) {
+							//This has the 'list' tag, it's a requirement
+							requirement = getRequirementFromRequirementList(level2[0]);
+							requirementCount = level2[1];
+							altAvgWeight += getRequirementComponentsTotalWeightInGrams(requirement)*requirementCount;
+						} else {
+							item = getItemFromItemList(level2[0]);
+							if(item){
+								itemCount = level2[1];
+								altAvgWeight += getItemWeightInGrams(item)*itemCount;
+							}
+						}
+					}
+					totalWeightInGrams += Math.floor(altAvgWeight/altCounter);
+				}	else {
+					if (level1[0]) {
+						item = getItemFromItemList(level1[0]);
+						if(item){
+							itemCount = level1[1];
+							totalWeightInGrams += getItemWeightInGrams(item)*itemCount;
+						}
+					}
+				}
+			}
+		}
+		return totalWeightInGrams;
+	}
+	
+	
+	
+	//Creates the results table from an item and recipes
+	function createRecipeByproductRow(byproducts) {
+		var htmlString = "";
+		var altRawWeightString;
+		var altCountString;
+		var altTotalWeightString;
+		var itemID;
+		var itemCount
+		var item
+		if (byproducts){
+			for (var byproduct of byproducts) {
+				// it's something else
+				altRawWeightString = "";
+				altCountString = "";
+				altTotalWeightString = "";
+				if (byproduct[0]){
+					itemID = byproduct[0];
+					item = getItemFromItemList(itemID);
+					if(item){
+						itemCount = 1;
+						if(byproduct[1]){itemCount = byproduct[1]};
+						altRawWeightString += getItemRawWeight(item) + "&nbsp<br>";
+						altCountString += itemCount + "&nbsp<br>";
+						altTotalWeightString += getItemWeightInGrams(item)*itemCount + "&nbsp<br>";
+					}
+				}
+				htmlString += "<tr>"
+				htmlString += "<td>" + itemID + "</td>";
+				htmlString += "<td>" + altRawWeightString + "</td>";
+				htmlString += "<td>" + altCountString + "</td>";
+				htmlString += "<td>" + altTotalWeightString + "</td>";
+				htmlString += "<td>-" + altTotalWeightString + "</td>";
+				htmlString += "</tr>";
+			}
+		}
+		return htmlString;
+	}
+	
+	
 	//Creates the results table from an item and recipes
 	function createRecipeResultsTable(recipeNumber) {
 		var recipe = getRecipeFromRecipeListByNumber(recipeNumber);
@@ -226,43 +357,6 @@ footer {
 	
 	
 	
-	//Creates the results table from an item and recipes
-	function createRecipeByproductRow(byproducts) {
-		var htmlString = "";
-		var altRawWeightString;
-		var altCountString;
-		var altTotalWeightString;
-		var itemID;
-		var itemCount
-		var item
-		if (byproducts){
-			for (var byproduct of byproducts) {
-				// it's something else
-				altRawWeightString = "";
-				altCountString = "";
-				altTotalWeightString = "";
-				if (byproduct[0]){
-					itemID = byproduct[0];
-					item = getItemFromItemList(itemID);
-					if(item){
-						itemCount = 1;
-						if(byproduct[1]){itemCount = byproduct[1]};
-						altRawWeightString += getItemRawWeight(item) + " <br>";
-						altCountString += itemCount + " <br>";
-						altTotalWeightString += getItemWeightInGrams(item)*itemCount + " <br>";
-					}
-				}
-				htmlString += "<tr>"
-				htmlString += "<td>" + itemID + "</td>";
-				htmlString += "<td>" + altRawWeightString + "</td>";
-				htmlString += "<td>" + altCountString + "</td>";
-				htmlString += "<td>" + altTotalWeightString + "</td>";
-				htmlString += "<td>-" + altTotalWeightString + "</td>";
-				htmlString += "</tr>";
-			}
-		}
-		return htmlString;
-	}
 	
 	
 	
@@ -539,88 +633,6 @@ footer {
 	
 	
 	
-	//Returns the total weight of the components in grams
-	function getItemWeightInGrams(item) {
-		var weight = 0;
-		var itemweight;
-		var totalWeightInGrams = 0;
-		if (item.weight){
-			if(Number.isInteger(item.weight)){
-				weight = item.weight;
-			} else if(isFloat(item.weight)){
-				weight = item.weight;
-			} else {
-				if (item.weight.includes("mg")){
-					itemweight = item.weight.slice(0, -3);
-					itemweight = parseInt(itemweight);
-					weight = itemweight/1000;
-				} else if (item.weight.includes("kg")){
-					itemweight = item.weight.slice(0, -3);
-					itemweight = parseInt(itemweight);
-					weight = itemweight*1000;
-				} else {
-					itemweight = item.weight.slice(0, -2);
-					itemweight = parseInt(itemweight);
-					weight = itemweight;
-				}
-			}
-		} else {
-			var itemCopy = getItemFromItemList(item["copy-from"]);
-			if(itemCopy){
-				weight = getItemWeightInGrams(itemCopy)
-			} else {
-				//console.log("error - item[copy-from] = " + item["copy-from"])
-				weight = 0;
-			}
-		}
-		return weight;
-	}
-	
-	
-	
-	//Returns the total weight of the components in grams
-	function getRequirementComponentsTotalWeightInGrams(requirement) {
-		var item;
-		var itemCount;
-		var level1;
-		var level2;
-		var totalWeightInGrams = 0;
-		var altAvgWeight = 0;
-		var altCounter = 0;
-		if (requirement.components){
-			for (var level1 of requirement.components) {
-				if (Array.isArray(level1)) {
-					altCounter = 0;
-					altAvgWeight = 0;
-					for (var level2 of level1) {
-						altCounter+=1;
-						if (level2[2]) {
-							//This has the 'list' tag, it's a requirement
-							requirement = getRequirementFromRequirementList(level2[0]);
-							requirementCount = level2[1];
-							altAvgWeight += getRequirementComponentsTotalWeightInGrams(requirement)*requirementCount;
-						} else {
-							item = getItemFromItemList(level2[0]);
-							if(item){
-								itemCount = level2[1];
-								altAvgWeight += getItemWeightInGrams(item)*itemCount;
-							}
-						}
-					}
-					totalWeightInGrams += Math.floor(altAvgWeight/altCounter);
-				}	else {
-					if (level1[0]) {
-						item = getItemFromItemList(level1[0]);
-						if(item){
-							itemCount = level1[1];
-							totalWeightInGrams += getItemWeightInGrams(item)*itemCount;
-						}
-					}
-				}
-			}
-		}
-		return totalWeightInGrams;
-	}
 	
 	
 	
