@@ -101,6 +101,241 @@ footer {
 		fillItemTypeList()
 	});
 	
+	//Gets the mapgen the item is in
+	function getItemMapgen(itemID, itemItemGroups) {
+		var mapgenName;
+		var itemMapgenList = [];
+		//Loop every itemgroup
+		for (var mapgn of mapgen) {
+			if (mapgn.object) {
+				mapgenName = getMapgenName(mapgn);
+				if (itemMapgenList.indexOf(mapgenName) === -1) {
+					//Check if the item would spawn in a mapgen
+					if(itemExistsInMapgen(mapgn, itemID, itemItemGroups)) {
+							itemMapgenList.push(mapgenName);
+					}
+				}	
+			}
+		}
+		return itemMapgenList;
+	}	
+	
+	
+	//Check if an item is able to spawn in the given mapgen
+	function itemExistsInMapgen(mapgn, itemID, itemItemGroups) {
+		var itemKey;
+		var mapgenObject;
+		mapgenObject = mapgn.object
+		if (mapgenObject.place_items) {
+			for (var place_it of mapgenObject.place_items) {
+				if (place_it.item) {
+					if (isInItemItemgroupList(place_it.item, itemItemGroups)) {
+						return true;
+					}
+				}
+			}
+		}
+		if (mapgenObject.items) {
+			if (Array.isArray(mapgenObject.items)) {
+				for (var it of mapgenObject.items) {
+					for (var i of it) {
+						if (i.item) {
+							if (isInItemItemgroupList(i.item, itemItemGroups)) {
+								return true;
+							}
+						}
+					}
+				}
+			} else {
+				for(key in mapgenObject.items) {
+					itemKey = mapgenObject.items[key];
+					if (Array.isArray(itemKey)) {
+						for (var it of itemKey) {
+							if (it.item) {
+								if (isInItemItemgroupList(it.item, itemItemGroups)) {
+									return true;
+								}
+							}
+						}
+					} else {
+						if (itemKey.item) {
+							//Get the itemgroup object from the itemgroup name
+							//Check if the itemID is in the specified itemgroup
+							if (isInItemItemgroupList(itemKey.item, itemItemGroups)) {
+								return true;
+							}
+						}
+					}
+				}
+			}
+		}
+		if (mapgenObject.item) {
+			if (Array.isArray(mapgenObject.item)) {
+				for (var it of mapgenObject.item) {
+					for (var i of it) {
+						if (i.item) {
+							if (i.item == itemID) {
+								return true;
+							}
+						}
+					}
+				}
+			} else {
+				for(key in mapgenObject.item) {
+					itemKey = mapgenObject.item[key];
+					if (Array.isArray(itemKey)) {
+						for (var it of itemKey) {
+							if (it.item) {
+								if (it.item == itemID) {
+									return true;
+								}
+							}
+						}
+					} else {
+						if (itemKey.item) {
+							if (itemKey.item == itemID) {
+								return true;
+							}
+						}
+					}
+				}
+			}
+		}
+		return false;
+	}	
+	
+	
+	
+	
+	//Checks if an itemgroup is already in an item itemgroup list
+	function isInItemItemgroupList(itemgroupID, itemGroupList) {
+		//Loop every itemgroup in the list
+		for (var itemgroup of itemGroupList) {
+			//Loop the itemgroups except for the last one, the last one is the item itself so not a group
+			for (var i = 0; i < (itemgroup.length - 1); i++) {
+				if (itemgroup[i][0] == itemgroupID) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	
+	//When an item from the list is clicked
+	function select_item(itemhref) {
+		var itemID = itemhref.id
+		var itemGroupList;
+		var itemRecipeList;
+		updateItemDescriptionHTML(itemID);
+		itemGroupList = getItemItemgroups(itemID);
+		itemInRecipeList = getItemInRecipes(itemID);
+		itemFromRecipeList = getItemFromRecipes(itemID);
+		itemMapgenList = getItemMapgen(itemID, itemGroupList);
+		createItemgroupResultsTable(itemGroupList);
+		createInRecipeResultsTable(itemInRecipeList);
+		createFromRecipeResultsTable(itemFromRecipeList);
+		createMapgenResultsTable(itemMapgenList);
+	}
+	
+	
+	
+	//Updates the list of items on the left
+	function updateItemList(){
+		document.getElementById("itemList").innerHTML = "";
+		var numItems;
+		var itemItemGroups;
+		var numItemGroups;
+		var numItemInRecipes;
+		var numItemFromRecipes;
+		var numItemInMapgen;
+		var total;
+		var htmlString;
+		var i = 0;
+		
+		htmlString = "<p>click the column heads to sort. Note: Fake.json and Obsolete.json are excluded.</p>";
+		htmlString += "<table>";
+		htmlString += "<tr>"
+		htmlString += "<th>Item name</th>"
+		htmlString += "<th class='vertical'><div class='vertical'>Item<BR>groups</div></th>"
+		htmlString += "<th class='vertical'><div class='vertical'>Used in recipes</div></th>"
+		htmlString += "<th class='vertical'><div class='vertical'>From recipes</div></th>"
+		htmlString += "<th class='vertical'><div class='vertical'>Mapgen</div></th>"
+		htmlString += "<th class='vertical'><div class='vertical'>Total</div></th>"
+		htmlString += "</tr>";
+		
+		numItems = items.length
+		
+		<!-- for (var item of items) { -->
+			<!-- set_percentComplete_value("processing item " + i + " of " + numItems); -->
+			<!-- if (item.name && item.id) { -->
+				<!-- if (item.type == get_itemType_value() || get_itemType_value() == "Any") { -->
+					<!-- numItemGroups = getItemItemgroups(item.id).length -->
+					<!-- numItemInRecipes = getItemInRecipes(item.id).length -->
+					<!-- numItemFromRecipes = getItemFromRecipes(item.id).length -->
+					<!-- numItemInMapgen = getItemMapgen(item.id).length -->
+					<!-- total = numItemGroups + numItemInRecipes + numItemFromRecipes + numItemInMapgen; -->
+					
+					<!-- htmlString += "<tr>"; -->
+					<!-- if (total == 0){ -->
+						<!-- htmlString += "<td>" + '<a style="color:red;" id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>'; -->
+					<!-- } else { -->
+						<!-- htmlString += "<td>" + '<a id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>'; -->
+					<!-- } -->
+					<!-- htmlString += "<td style='text-align: center;'><span title='This item is in "+numItemGroups+" itemgroups'>" + numItemGroups + '</span></td>'; -->
+					<!-- htmlString += "<td style='text-align: center;'><span title='This item is in "+numItemInRecipes+" recipes'>" + numItemInRecipes + '</span></td>'; -->
+					<!-- htmlString += "<td style='text-align: center;'><span title='This item comes from "+numItemFromRecipes+" recipes'>" + numItemFromRecipes + '</span></td>'; -->
+					<!-- htmlString += "<td style='text-align: center;'><span title='Coming soon: number of mapgens'>" + numItemInMapgen + '</span></td>'; -->
+					<!-- htmlString += "<td style='text-align: center;'>" + total + '</td>'; -->
+					<!-- htmlString += "</tr>"; -->
+				<!-- } -->
+			<!-- } -->
+			<!-- i++ -->
+		<!-- } -->
+		
+		var refreshIntervalId = setInterval(function() {
+			if (i < (items.length +0)) {
+				if(i % 50 === 0){set_percentComplete_value("processing item " + i + " of " + numItems)}
+				item = items[i];
+				if (item.name && item.id) {
+					if (item.type == get_itemType_value() || get_itemType_value() == "Any") {
+						itemItemGroups = getItemItemgroups(item.id)
+						numItemGroups = itemItemGroups.length
+						numItemInRecipes = getItemInRecipes(item.id).length
+						numItemFromRecipes = getItemFromRecipes(item.id).length
+						numItemInMapgen = getItemMapgen(item.id, itemItemGroups).length
+						total = numItemGroups + numItemInRecipes + numItemFromRecipes + numItemInMapgen;
+						
+						htmlString += "<tr>";
+						if (total == 0){
+							htmlString += "<td>" + '<a style="color:red;" id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
+						} else {
+							htmlString += "<td>" + '<a id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
+						}
+						htmlString += "<td style='text-align: center;'><span title='This item is in "+numItemGroups+" itemgroups'>" + numItemGroups + '</span></td>';
+						htmlString += "<td style='text-align: center;'><span title='This item is in "+numItemInRecipes+" recipes'>" + numItemInRecipes + '</span></td>';
+						htmlString += "<td style='text-align: center;'><span title='This item comes from "+numItemFromRecipes+" recipes'>" + numItemFromRecipes + '</span></td>';
+						htmlString += "<td style='text-align: center;'><span title='Coming soon: number of mapgens'>" + numItemInMapgen + '</span></td>';
+						htmlString += "<td style='text-align: center;'>" + total + '</td>';
+						htmlString += "</tr>";
+					}
+				}
+			} else {
+				htmlString += "</table>";
+				$('#itemList').append(htmlString);
+				tableSort();
+				clearInterval(refreshIntervalId);
+			}
+			i++     
+		}, 0);
+		
+		
+	} 
+	
+	
+	
+	
+	
 	//Updates the results table
 	function updateItemDescriptionHTML(itemID) {
 		var item = getItemFromItemList(itemID);
@@ -151,9 +386,6 @@ footer {
 		var itemgroupList = []
 		if (itemgroup.items && itemgroup.type == "item_group"){
 			for (var itemInGroup of itemgroup.items) {
-				if (itemID == "case_violin" && itemgroup.id == "musicstore_showpiece") {
-					console.log("itemInGroup.collection: " + itemInGroup.collection);
-				}
 				if (itemInGroup[0] == itemID) {
 					return [[itemID, itemInGroup[1]]];
 				}
@@ -234,20 +466,10 @@ footer {
 		return itemGroupList;
 	}
 	
-	//Checks if an itemgroup is already in an item itemgroup list
-	function isInItemItemgroupList(itemgroupID, itemGroupList) {
-		//Loop every itemgroup
-		for (var itemgroup of itemGroupList) {
-			if (itemgroup[0] == itemgroupID) {
-				return true;
-			}
-		}
-		return itemGroupList;
-	}
+	
 	
 	//Gets the item groups from an itemgroupid
 	function getItemgroupFromID(itemGroupID) {
-										
 		//Loop every itemgroup
 		for (var itemgroup of itemgroups) {
 			if (itemgroup.id) {
@@ -260,88 +482,7 @@ footer {
 	}
 	
 	
-	//Gets the mapgen the item is in
-	function getItemMapgen(itemID) {
-		var itemEntry;
-		var itemKey;
-		var mapgenEntry;
-		var mapgenObject;
-		var itemMapgenList = [];
-		//Loop every itemgroup
-		for (var mapgn of mapgen) {
-			if (mapgn.object) {
-				mapgenObject = mapgn.object
-				if (mapgenObject.place_items) {
-					for (var place_it of mapgenObject.place_items) {
-						if (place_it.item) {
-							itemEntry = getItemEntryFromItemGroup(itemID, place_it.item); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
-							if (itemEntry) {
-								mapgenEntry = getMapgenName(mapgenObject)
-								itemMapgenList.push(mapgenEntry); 
-							}
-						}
-					}
-				}
-				if (mapgenObject.items) {
-					if (Array.isArray(mapgenObject.items)) {
-						for (var it of mapgenObject.items) {
-							for (var i of it) {
-								if (i.item) {
-									itemEntry = getItemEntryFromItemGroup(itemID, i.item); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
-									if (itemEntry) {
-										mapgenEntry = getMapgenName(mapgenObject)
-										itemMapgenList.push(mapgenEntry); 
-									}
-								}
-							}
-						}
-					} else {
-						for(key in mapgenObject.items) {
-							itemKey = mapgenObject.items[key];
-							if (Array.isArray(itemKey)) {
-								for (var it of itemKey) {
-									if (it.item) {
-										itemEntry = getItemEntryFromItemGroup(itemID, it.item); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
-										if (itemEntry) {
-											mapgenEntry = getMapgenName(mapgenObject)
-											itemMapgenList.push(mapgenEntry); 
-										}
-									}
-								}
-							} else {
-								if (itemKey.item) {
-									//Get the itemgroup object from the itemgroup name
-									//Check if the itemID is in the specified itemgroup
-									itemEntry = getItemEntryFromItemGroup(itemID, getItemgroupFromID(itemKey.item)); //returns an item entry e.g. { "item": "dress_shoes", "prob": 30, "damage": [ 0, 4 ] }
-									if (itemEntry) {
-										mapgenEntry = getMapgenName(mapgn)
-										itemMapgenList.push(mapgenEntry); 
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		return itemMapgenList;
-	}	
 	
-	//When an item from the list is clicked
-	function select_item(itemhref) {
-		var itemID = itemhref.id
-		var itemGroupList;
-		var itemRecipeList;
-		updateItemDescriptionHTML(itemID);
-		itemGroupList = getItemItemgroups(itemID);
-		itemInRecipeList = getItemInRecipes(itemID);
-		itemFromRecipeList = getItemFromRecipes(itemID);
-		itemMapgenList = getItemMapgen(itemID);
-		createItemgroupResultsTable(itemGroupList);
-		createInRecipeResultsTable(itemInRecipeList);
-		createFromRecipeResultsTable(itemFromRecipeList);
-		createMapgenResultsTable(itemMapgenList);
-	}
 	
 	//Creates the results table from an item and mapgen
 	function createMapgenResultsTable(itemMapgenList) {
@@ -368,65 +509,15 @@ footer {
 	
 	//Gets the name if the mapgen
 	function getMapgenName(mapgen) {
-		var mapgenName = "";
 		if (mapgen.om_terrain) {
-			mapgenName = mapgen.om_terrain;
+			return mapgen.om_terrain;
 		} else if (mapgen.nested_mapgen_id){
-			mapgenName = mapgen.nested_mapgen_id;
+			return mapgen.nested_mapgen_id;
 		}
-		return mapgenName;
+		return "";
 	}
 	
 	
-	//Updates the list of items on the left
-	function updateItemList(){
-		document.getElementById("itemList").innerHTML = "";
-		var numItems;
-		var numItemGroups;
-		var numItemInRecipes;
-		var numItemFromRecipes;
-		var total;
-		var htmlString;
-		var i = 0;
-		
-		htmlString = "<p>click the column heads to sort. Note: Fake.json and Obsolete.json are excluded.</p>";
-		htmlString += "<table>";
-		htmlString += "<tr>"
-		htmlString += "<th>Item name</th>"
-		htmlString += "<th class='vertical'><div class='vertical'>Item<BR>groups</div></th>"
-		htmlString += "<th class='vertical'><div class='vertical'>Used in recipes</div></th>"
-		htmlString += "<th class='vertical'><div class='vertical'>From recipes</div></th>"
-		htmlString += "<th class='vertical'><div class='vertical'>Mapgen</div></th>"
-		htmlString += "<th class='vertical'><div class='vertical'>Total</div></th>"
-		htmlString += "</tr>";
-		
-		for (var item of items) {
-			if (item.name && item.id) {
-				if (item.type == get_itemType_value() || get_itemType_value() == "Any") {
-					numItemGroups = getItemItemgroups(item.id).length
-					numItemInRecipes = getItemInRecipes(item.id).length
-					numItemFromRecipes = getItemFromRecipes(item.id).length
-					total = numItemGroups + numItemInRecipes + numItemFromRecipes
-					
-					htmlString += "<tr>";
-					if (total == 0){
-						htmlString += "<td>" + '<a style="color:red;" id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
-					} else {
-						htmlString += "<td>" + '<a id="'+item.id+'" href="#" onClick="select_item(this)">' + item.id + '</span></td>';
-					}
-					htmlString += "<td style='text-align: center;'><span title='This item is in "+numItemGroups+" itemgroups'>" + numItemGroups + '</span></td>';
-					htmlString += "<td style='text-align: center;'><span title='This item is in "+numItemInRecipes+" recipes'>" + numItemInRecipes + '</span></td>';
-					htmlString += "<td style='text-align: center;'><span title='This item comes from "+numItemFromRecipes+" recipes'>" + numItemFromRecipes + '</span></td>';
-					htmlString += "<td style='text-align: center;'><span title='Coming soon: number of mapgens'>" + 0 + '</span></td>';
-					htmlString += "<td style='text-align: center;'>" + total + '</td>';
-					htmlString += "</tr>";
-				}
-			}
-		}
-		htmlString += "</table>";
-		$('#itemList').append(htmlString);
-		tableSort();
-	} 
 	
 	
 	//Gets the recipes the item is in
@@ -603,6 +694,10 @@ footer {
 		return document.getElementById("itemType").value;
 	} 
 	
+	function set_percentComplete_value(val){
+		document.getElementById("percentComplete").innerHTML = val;
+	} 
+	
 
   </script>
 </head>
@@ -623,6 +718,7 @@ footer {
       <li>Item type</li>
       <li>  <select id = "itemType" onchange = "itemType_change()"><option value = "Any">Any</option></select></li>
       <li> <button onclick="btn_OK_Click()">OK</button> </li>
+      <li> <span id="percentComplete"></span> </li>
     </ul>
 	<div id="itemList">
 	
